@@ -1,0 +1,148 @@
+// See https://go.microsoft.com/fwlink/?LinkId=733558
+// for the documentation about the tasks.json format
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Test (fast compile)",
+      "detail": "Runs all tests",
+      "type": "shell",
+      "group": "test",
+      "command": "cargo t --workspace --features bevy/dynamic",
+      "options": {
+        "env": {
+          "RUST_LOG": "warn,aabbsplosions=trace"
+        }
+      },
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "focus": true
+      }
+    },
+    {
+      "label": "Run release (fast compile)",
+      "detail": "Runs binary in release mode",
+      "type": "shell",
+      "group": "build",
+      "command": "cargo run --features bevy/dynamic --release",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "focus": true
+      }
+    },
+    {
+      "label": "Run debug (fast compile)",
+      "detail": "Runs binary in debug mode",
+      "type": "shell",
+      "group": "build",
+      "command": "cargo run --features bevy/dynamic",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "focus": true
+      }
+    },
+    {
+      "label": "Run w. editor-pls",
+      "detail": "Runs binary with editor-pls enabled",
+      "type": "shell",
+      "command": "cargo run --features editor",
+      "problemMatcher": ["$rustc"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "focus": true
+      }
+    },
+    {
+      "label": "WASM development",
+      "detail": "Use cargo watch to run wasm-server-runner",
+      "type": "shell",
+      "group": "build",
+      "command": "cargo watch -- cargo run --target wasm32-unknown-unknown",
+      "problemMatcher": ["$rustc"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "focus": true
+      }
+    },
+    {
+      "label": "Update",
+      "detail": "Update dependencies (Cargo.lock)",
+      "type": "shell",
+      "command": "cargo update",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "focus": true
+      }
+    },
+    {
+      "label": "Clippy",
+      "detail": "Look for Clippy errors",
+      "type": "shell",
+      "command": "cargo clippy --all-features --all-targets -- -D warnings",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "focus": true
+      }
+    },
+    {
+      "label": "Format",
+      "detail": "Format all source",
+      "type": "shell",
+      "command": "cargo fmt --all --quiet",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "reveal": "never",
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Clean",
+      "detail": "Clean build artifacts",
+      "type": "shell",
+      "command": "cargo clean",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "reveal": "never",
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    }
+  ]
+}
