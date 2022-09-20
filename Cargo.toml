@@ -11,7 +11,7 @@ readme = "README.md"
 authors = ["laundmo"]
 
 [dependencies]
-bevy = { version = "0.8.0", default-features = false }
+bevy = { version = "0.8.0", default-features = true }
 
 [dev-dependencies]
 bevy = { version = "0.8.0", default-features = true }

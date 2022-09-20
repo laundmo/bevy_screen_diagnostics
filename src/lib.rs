@@ -14,10 +14,10 @@
 //! }
 //! ```
 //!
-//! bevy_screen_diagnostics provides the following plugins:
-//! - [ScreenDiagnostics] which offers the basic functionality of displaying diagnostics.
-//! - [ScreenFrameDiagnostics] adds the FrameTimeDiagnosticsPlugin and the framerate and frametime to [ScreenDiagnostics]
-//! - [ScreenEntityDiagnostics] adds the FrameTimeDiagnosticsPlugin and the framerate and frametime to [ScreenDiagnostics]
+//! bevy_screen_diagnostics provides the following bevy plugins:
+//! - [ScreenDiagnostics]  which offers the basic functionality of displaying diagnostics.
+//! - [ScreenFrameDiagnostics] which adds the [FrameTimeDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
+//! - [ScreenEntityDiagnostics] which adds the [EntityCountDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
 
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_doc_code_examples)]
@@ -25,12 +25,14 @@
 use std::collections::BTreeMap;
 
 use bevy::{
-    diagnostic::{
-        DiagnosticId, Diagnostics, EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin,
-    },
+    diagnostic::{DiagnosticId, Diagnostics},
     prelude::*,
     time::FixedTimestep,
 };
+
+mod extras;
+
+pub use self::extras::{ScreenEntityDiagnostics, ScreenFrameDiagnostics};
 
 const TIMESTEP_10_PER_SECOND: f64 = 1.0 / 10.0;
 
@@ -41,7 +43,7 @@ pub struct ScreenDiagnostics {
     /// The Style used to position the Text.
     ///
     /// By default this is in the bottom right corner of the window:
-    /// ```rs
+    /// ```rust
     /// Style {
     ///     align_self: AlignSelf::FlexEnd,
     ///     position_type: PositionType::Absolute,
@@ -51,12 +53,12 @@ pub struct ScreenDiagnostics {
     ///         ..default()
     ///     },
     ///     ..default()
-    /// },
+    /// }
     /// ```
     pub style: Style,
     /// Colors to use for the description and diagnostic text.
     ///
-    /// Will loop back to the start if its shorter than the amount of [Diagnostic]s added to [DiagnosticsText].
+    /// Will loop back to the start if its shorter than the amount of [DiagnosticId]s added to [DiagnosticsText].
     pub colors: Vec<(Color, Color)>,
     /// The font used for the text. By default [FiraCodeBold](https://github.com/tonsky/FiraCode) is used.
     pub font: Option<&'static str>,
@@ -104,7 +106,7 @@ impl Plugin for ScreenDiagnostics {
     }
 }
 
-// implementation mostly credit: https://github.com/nicopap/bevy-debug-text-overlay/blob/c929111aeff46fbf3a26ceaf714caebd62d87518/src/overlay.rs#L184-L188
+// implementation adjusted from: https://github.com/nicopap/bevy-debug-text-overlay/blob/c929111aeff46fbf3a26ceaf714caebd62d87518/src/overlay.rs#L184-L188
 struct ScreenDiagnosticsFont(Handle<Font>);
 impl FromWorld for ScreenDiagnosticsFont {
     fn from_world(world: &mut World) -> Self {
@@ -128,77 +130,35 @@ impl FromWorld for ScreenDiagnosticsFont {
     }
 }
 
-/// Plugin which adds the [bevy_diagnostic::FrameTimeDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
-///
-/// Example: ``16.6 ms/frame 60 fps``
-pub struct ScreenFrameDiagnostics;
-
-impl Plugin for ScreenFrameDiagnostics {
-    fn build(&self, app: &mut App) {
-        app.add_plugin(FrameTimeDiagnosticsPlugin)
-            .add_startup_system(setup_frame_diagnostics);
-    }
-}
-
-fn setup_frame_diagnostics(mut diags: ResMut<DiagnosticsText>) {
-    diags.add(
-        "fps".to_string(),
-        FrameTimeDiagnosticsPlugin::FPS,
-        Aggregate::Value,
-        None,
-    );
-
-    diags.add(
-        "ms/frame".to_string(),
-        FrameTimeDiagnosticsPlugin::FRAME_TIME,
-        Aggregate::MovingAverage(5),
-        Some(|n| n * 1000.),
-    );
-}
-
-/// Plugin which adds the [bevy_diagnostic::EntityCountDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
-///
-/// Example: ``15 entities``
-pub struct ScreenEntityDiagnostics;
-
-impl Plugin for ScreenEntityDiagnostics {
-    fn build(&self, app: &mut App) {
-        app.add_plugin(EntityCountDiagnosticsPlugin)
-            .add_startup_system(setup_entity_diagnostics);
-    }
-}
-
-fn setup_entity_diagnostics(mut diags: ResMut<DiagnosticsText>) {
-    diags.add(
-        "entities".to_string(),
-        EntityCountDiagnosticsPlugin::ENTITY_COUNT,
-        Aggregate::Value,
-        None,
-    );
-}
-
 #[derive(Component)]
 struct DiagnosticsTextMarker;
 
 /// Aggregaes which can be used for displaying Diagnostics.
 #[derive(Copy, Clone, Default)]
 pub enum Aggregate {
-    /// The latest [bevy_diagnostic::diagnostic::Diagnostic::value]
+    /// The latest [Diagnostic::value]
     #[default]
     Value,
-    /// The [bevy_diagnostic::diagnostic::Diagnostic::average] of all recorded diagnostic measurements.
+    /// The [Diagnostic::average] of all recorded diagnostic measurements.
     #[allow(dead_code)]
     Average,
     /// A moving average over n last diagnostic measurements.
+    ///
+    /// If this is larger than the amount of diagnostic measurement stored for that diagnostic, no update will happen.
     MovingAverage(usize),
 }
 
-type ConvertFn = Option<fn(f64) -> f64>;
+/// Type alias for the fuction used to format a diagnostic value to a string.
+///
+/// Useful especially for applying some operations to the value before formatting.
+///
+/// Example: ``|v| format!("{:.2}", v);`` which limits the decimal places to 1.
+pub type FormatFn = fn(f64) -> String;
 
-/// Resource which maps the diagnostics to their bevy_ui text element.
+/// Resource which maps the name to the [DiagnosticId], [Aggregate] and [ConvertFn]
 #[derive(Default)]
 pub struct DiagnosticsText {
-    diagnostics: BTreeMap<String, (DiagnosticId, Aggregate, ConvertFn)>,
+    diagnostics: BTreeMap<String, (DiagnosticId, Aggregate, FormatFn)>,
     layout_changed: bool,
     colors: Vec<(Color, Color)>,
     color_index: usize,
@@ -208,22 +168,31 @@ impl DiagnosticsText {
     /// Add a diagnostic to be displayed.
     ///
     /// * `name` - The name displayed on-screen. Also used as a key.
-    /// * `diagnostic` - The diagnostic which is displayed.
+    /// * `diagnostic` - The [DiagnosticId] which is displayed.
     /// * `aggregate` - The Aggregate which is applied to the diagnostic measurements.
-    /// * `convert` - A function with the signature fn(f64) -> f64 used to transform the aggregate result.
-    ///               Useful for converting a measurement to a different unit.
+    /// * `format` - A function with the signature fn(f64) -> String used to transform the diagnostic result into a string.
+    ///              Convert
+    /// ```rust
+    /// diags.add(
+    ///     "ms/frame".to_string(),
+    ///     FrameTimeDiagnosticsPlugin::FRAME_TIME,
+    ///     Aggregate::MovingAverage(5),
+    ///     Some(|n| n * 1000.),
+    /// );
+    /// ```
     pub fn add(
         &mut self,
         name: String,
         diagnostic: DiagnosticId,
         aggregate: Aggregate,
-        convert: ConvertFn,
+        format_fn: FormatFn,
     ) {
         self.diagnostics
-            .insert(name, (diagnostic, aggregate, convert));
+            .insert(name, (diagnostic, aggregate, format_fn));
         self.layout_changed = true;
     }
 
+    /// Remove a diagnostic from the screen by name.
     #[allow(dead_code)]
     pub fn remove(&mut self, name: String) {
         self.diagnostics.remove(&name);
@@ -235,7 +204,7 @@ impl DiagnosticsText {
             return;
         }
 
-        for (i, (diag_id, aggregate, transform)) in self.diagnostics.values().rev().enumerate() {
+        for (i, (diag_id, aggregate, transform_fn)) in self.diagnostics.values().rev().enumerate() {
             if let Some(diag) = diagnostics.get(*diag_id) {
                 let diag_val = match aggregate {
                     Aggregate::Value => diag.value(),
@@ -245,11 +214,8 @@ impl DiagnosticsText {
                         skip_maybe.map(|skip| diag.values().skip(skip).sum::<f64>() / *count as f64)
                     }
                 };
-                if let Some(mut val) = diag_val {
-                    if let Some(transform_fn) = transform {
-                        val = transform_fn(val);
-                    }
-                    text.sections[i * 2].value = format!("{:.1}", val);
+                if let Some(val) = diag_val {
+                    text.sections[i * 2].value = transform_fn(val);
                 }
             }
         }

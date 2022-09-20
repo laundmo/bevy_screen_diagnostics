@@ -57,38 +57,6 @@
       }
     },
     {
-      "label": "Run w. editor-pls",
-      "detail": "Runs binary with editor-pls enabled",
-      "type": "shell",
-      "command": "cargo run --features editor",
-      "problemMatcher": ["$rustc"],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": true,
-        "focus": true
-      }
-    },
-    {
-      "label": "WASM development",
-      "detail": "Use cargo watch to run wasm-server-runner",
-      "type": "shell",
-      "group": "build",
-      "command": "cargo watch -- cargo run --target wasm32-unknown-unknown",
-      "problemMatcher": ["$rustc"],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "panel": "shared",
-        "showReuseMessage": true,
-        "clear": true,
-        "focus": true
-      }
-    },
-    {
       "label": "Update",
       "detail": "Update dependencies (Cargo.lock)",
       "type": "shell",
