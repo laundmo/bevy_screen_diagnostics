@@ -1,12 +1,13 @@
+//
 use bevy::prelude::*;
 
-use bevy_screen_diagnostics::{ScreenDiagnostics, ScreenFrameDiagnostics};
+use bevy_screen_diagnostics::{ScreenDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ScreenDiagnostics::default())
-        .add_plugin(ScreenFrameDiagnostics)
+        .add_plugin(ScreenDiagnosticsPlugin::default())
+        .add_plugin(ScreenFrameDiagnosticsPlugin)
         .add_startup_system(setup_camera)
         .run();
 }

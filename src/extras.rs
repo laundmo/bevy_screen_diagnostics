@@ -3,53 +3,53 @@ use bevy::{
     prelude::{App, Plugin, ResMut},
 };
 
-use crate::{Aggregate, DiagnosticsText};
+use crate::{Aggregate, ScreenDiagnostics};
 
 /// Plugin which adds the [FrameTimeDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
 ///
 /// Example: ``16.6 ms/frame 60 fps``
-pub struct ScreenFrameDiagnostics;
+pub struct ScreenFrameDiagnosticsPlugin;
 
-impl Plugin for ScreenFrameDiagnostics {
+impl Plugin for ScreenFrameDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin)
             .add_startup_system(setup_frame_diagnostics);
     }
 }
 
-fn setup_frame_diagnostics(mut diags: ResMut<DiagnosticsText>) {
-    diags.add(
-        "fps".to_string(),
-        FrameTimeDiagnosticsPlugin::FPS,
-        Aggregate::Value,
-        |v| format!("{:.0}", v),
-    );
+fn setup_frame_diagnostics(mut diags: ResMut<ScreenDiagnostics>) {
+    diags
+        .add("fps".to_string(), FrameTimeDiagnosticsPlugin::FPS)
+        .aggregate(Aggregate::Value)
+        .format(|v| format!("{:.0}", v));
 
-    diags.add(
-        "ms/frame".to_string(),
-        FrameTimeDiagnosticsPlugin::FRAME_TIME,
-        Aggregate::MovingAverage(5),
-        |v| format!("{:.2}", v * 1000.),
-    );
+    diags
+        .add(
+            "ms/frame".to_string(),
+            FrameTimeDiagnosticsPlugin::FRAME_TIME,
+        )
+        .aggregate(Aggregate::MovingAverage(5))
+        .format(|v| format!("{:.2}", v * 1000.));
 }
 
 /// Plugin which adds the [EntityCountDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
 ///
 /// Example: ``15 entities``
-pub struct ScreenEntityDiagnostics;
+pub struct ScreenEntityDiagnosticsPlugin;
 
-impl Plugin for ScreenEntityDiagnostics {
+impl Plugin for ScreenEntityDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(EntityCountDiagnosticsPlugin)
             .add_startup_system(setup_entity_diagnostics);
     }
 }
 
-fn setup_entity_diagnostics(mut diags: ResMut<DiagnosticsText>) {
-    diags.add(
-        "entities".to_string(),
-        EntityCountDiagnosticsPlugin::ENTITY_COUNT,
-        Aggregate::Value,
-        |v| format!("{:.0}", v),
-    );
+fn setup_entity_diagnostics(mut diags: ResMut<ScreenDiagnostics>) {
+    diags
+        .add(
+            "entities".to_string(),
+            EntityCountDiagnosticsPlugin::ENTITY_COUNT,
+        )
+        .aggregate(Aggregate::Value)
+        .format(|v| format!("{:.0}", v));
 }

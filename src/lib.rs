@@ -32,12 +32,12 @@ use bevy::{
 
 mod extras;
 
-pub use self::extras::{ScreenEntityDiagnostics, ScreenFrameDiagnostics};
+pub use self::extras::{ScreenEntityDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
 
 const TIMESTEP_10_PER_SECOND: f64 = 1.0 / 10.0;
 
 /// Plugin for displaying Diagnostics on screen.
-pub struct ScreenDiagnostics {
+pub struct ScreenDiagnosticsPlugin {
     /// The rate at which the diagnostics on screen are updated. Default: 1.0/10.0 (10 times per second).
     pub timestep: f64,
     /// The Style used to position the Text.
@@ -56,17 +56,13 @@ pub struct ScreenDiagnostics {
     /// }
     /// ```
     pub style: Style,
-    /// Colors to use for the description and diagnostic text.
-    ///
-    /// Will loop back to the start if its shorter than the amount of [DiagnosticId]s added to [DiagnosticsText].
-    pub colors: Vec<(Color, Color)>,
     /// The font used for the text. By default [FiraCodeBold](https://github.com/tonsky/FiraCode) is used.
     pub font: Option<&'static str>,
 }
 
 const DEFAULT_COLORS: (Color, Color) = (Color::RED, Color::WHITE);
 
-impl Default for ScreenDiagnostics {
+impl Default for ScreenDiagnosticsPlugin {
     fn default() -> Self {
         Self {
             timestep: TIMESTEP_10_PER_SECOND,
@@ -80,7 +76,6 @@ impl Default for ScreenDiagnostics {
                 },
                 ..default()
             },
-            colors: vec![DEFAULT_COLORS],
             font: None,
         }
     }
@@ -89,9 +84,9 @@ impl Default for ScreenDiagnostics {
 struct FontOption(Option<&'static str>);
 struct DiagnosticsStyle(Style);
 
-impl Plugin for ScreenDiagnostics {
+impl Plugin for ScreenDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<DiagnosticsText>()
+        app.init_resource::<ScreenDiagnostics>()
             .insert_resource(FontOption(self.font))
             .init_resource::<ScreenDiagnosticsFont>()
             .insert_resource(DiagnosticsStyle(self.style.clone()))
@@ -99,7 +94,6 @@ impl Plugin for ScreenDiagnostics {
             .add_system(update_onscreen_diags_layout)
             .add_system_set(
                 SystemSet::new()
-                    // This prints out "goodbye world" twice every second
                     .with_run_criteria(FixedTimestep::step(TIMESTEP_10_PER_SECOND))
                     .with_system(update_diags),
             );
@@ -134,7 +128,7 @@ impl FromWorld for ScreenDiagnosticsFont {
 struct DiagnosticsTextMarker;
 
 /// Aggregaes which can be used for displaying Diagnostics.
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub enum Aggregate {
     /// The latest [Diagnostic::value]
     #[default]
@@ -157,65 +151,178 @@ pub type FormatFn = fn(f64) -> String;
 
 /// Resource which maps the name to the [DiagnosticId], [Aggregate] and [ConvertFn]
 #[derive(Default)]
-pub struct DiagnosticsText {
-    diagnostics: BTreeMap<String, (DiagnosticId, Aggregate, FormatFn)>,
+pub struct ScreenDiagnostics {
+    text_alignment: TextAlignment,
+    diagnostics: BTreeMap<String, DiagnosticsText>,
     layout_changed: bool,
-    colors: Vec<(Color, Color)>,
-    color_index: usize,
+}
+
+struct DiagnosticsText {
+    id: DiagnosticId,
+    agg: Aggregate,
+    format: FormatFn,
+    show_name: bool,
+    colors: (Color, Color),
+    edit: bool,
+    rebuild: bool,
 }
 
 impl DiagnosticsText {
+    fn format(&self, v: f64) -> String {
+        let formatter = self.format;
+        formatter(v)
+    }
+}
+
+/// Builder-like interface for a [DiagnosticsText].
+pub struct DiagnosticsTextBuilder<'a> {
+    m: &'a mut BTreeMap<String, DiagnosticsText>,
+    k: String,
+}
+
+impl<'a> DiagnosticsTextBuilder<'a> {
+    /// Set the Aggregate function for this [DiagnosticsText]
+    pub fn aggregate(self, agg: Aggregate) -> Self {
+        self.m.entry(self.k.clone()).and_modify(|e| {
+            e.agg = agg;
+            e.rebuild = true;
+        });
+        self
+    }
+
+    /// Set the formatting function for this [DiagnosticsText]
+    pub fn format(self, format: FormatFn) -> Self {
+        self.m.entry(self.k.clone()).and_modify(|e| {
+            e.format = format;
+            dbg!(format);
+            e.rebuild = true;
+        });
+        self
+    }
+
+    /// Set the text color for the diagnostic value
+    pub fn diagnostic_color(self, color: Color) -> Self {
+        self.m.entry(self.k.clone()).and_modify(|e| {
+            e.colors.0 = color;
+            e.edit = true;
+        });
+        self
+    }
+
+    /// Set the text color for the diagnostic name
+    pub fn name_color(self, color: Color) -> Self {
+        self.m.entry(self.k.clone()).and_modify(|e| {
+            e.colors.1 = color;
+            e.edit = true;
+        });
+        self
+    }
+
+    /// Toggle whhether the diagnostic name is displayed.
+    pub fn toggle_name(self) -> Self {
+        self.m.entry(self.k.clone()).and_modify(|e| {
+            e.show_name = !e.show_name;
+            e.edit = true;
+        });
+        self
+    }
+}
+
+impl ScreenDiagnostics {
     /// Add a diagnostic to be displayed.
     ///
     /// * `name` - The name displayed on-screen. Also used as a key.
     /// * `diagnostic` - The [DiagnosticId] which is displayed.
-    /// * `aggregate` - The Aggregate which is applied to the diagnostic measurements.
-    /// * `format` - A function with the signature fn(f64) -> String used to transform the diagnostic result into a string.
-    ///              Convert
+
     /// ```rust
-    /// diags.add(
+    /// screen_diagnostics
+    ///   .add(
     ///     "ms/frame".to_string(),
     ///     FrameTimeDiagnosticsPlugin::FRAME_TIME,
-    ///     Aggregate::MovingAverage(5),
-    ///     Some(|n| n * 1000.),
-    /// );
+    ///   )
+    ///   .aggregate(Aggregate::Value)
+    ///   .format(|v| format!("{:.0}", v));
     /// ```
-    pub fn add(
-        &mut self,
-        name: String,
-        diagnostic: DiagnosticId,
-        aggregate: Aggregate,
-        format_fn: FormatFn,
-    ) {
-        self.diagnostics
-            .insert(name, (diagnostic, aggregate, format_fn));
-        self.layout_changed = true;
+    pub fn add<S>(&mut self, name: S, id: DiagnosticId) -> DiagnosticsTextBuilder
+    where
+        S: Into<String>,
+    {
+        let text = DiagnosticsText {
+            id,
+            agg: Aggregate::Value,
+            format: |v| format!("{:.2}", v),
+            show_name: true,
+            colors: DEFAULT_COLORS,
+            edit: false,
+            rebuild: true,
+        };
+        let name: String = name.into();
+        self.diagnostics.insert(name.clone(), text);
+
+        DiagnosticsTextBuilder {
+            m: &mut self.diagnostics,
+            k: name,
+        }
     }
 
-    /// Remove a diagnostic from the screen by name.
+    /// Modify a [DiagnosticsText] by name.
+    ///
+    /// Uses the same syntax as [add_text]
+    pub fn modify<S>(&mut self, name: S) -> DiagnosticsTextBuilder
+    where
+        S: Into<String>,
+    {
+        DiagnosticsTextBuilder {
+            m: &mut self.diagnostics,
+            k: name.into(),
+        }
+    }
+
+    /// Remove a diagnostic by name.
     #[allow(dead_code)]
     pub fn remove(&mut self, name: String) {
         self.diagnostics.remove(&name);
+    }
+
+    /// Set the [TextAlignment] and trigger a rebuild
+    pub fn set_alignment(&mut self, align: TextAlignment) {
+        self.text_alignment = align;
         self.layout_changed = true;
     }
 
-    fn update(&self, diagnostics: Res<Diagnostics>, mut text: Mut<Text>) {
+    fn update(&mut self, diagnostics: Res<Diagnostics>, mut text: Mut<Text>) {
         if self.layout_changed {
             return;
         }
 
-        for (i, (diag_id, aggregate, transform_fn)) in self.diagnostics.values().rev().enumerate() {
-            if let Some(diag) = diagnostics.get(*diag_id) {
-                let diag_val = match aggregate {
+        for (i, (key, mut text_diag)) in self.diagnostics.iter_mut().rev().enumerate() {
+            if text_diag.rebuild {
+                self.layout_changed = true;
+                text_diag.rebuild = false;
+                continue;
+            }
+            if text_diag.edit {
+                text.sections[i * 2].style.color = text_diag.colors.0;
+                text.sections[(i * 2) + 1].style.color = text_diag.colors.1;
+                if text_diag.show_name {
+                    text.sections[(i * 2) + 1].value = format!(" {} ", key);
+                } else {
+                    text.sections[(i * 2) + 1].value = " ".to_string();
+                }
+                text_diag.edit = false;
+            }
+
+            if let Some(diag) = diagnostics.get(text_diag.id) {
+                let diag_val = match text_diag.agg {
                     Aggregate::Value => diag.value(),
                     Aggregate::Average => diag.average(),
                     Aggregate::MovingAverage(count) => {
-                        let skip_maybe = diag.history_len().checked_sub(*count);
-                        skip_maybe.map(|skip| diag.values().skip(skip).sum::<f64>() / *count as f64)
+                        let skip_maybe = diag.history_len().checked_sub(count);
+                        skip_maybe.map(|skip| diag.values().skip(skip).sum::<f64>() / count as f64)
                     }
                 };
                 if let Some(val) = diag_val {
-                    text.sections[i * 2].value = transform_fn(val);
+                    text.sections[i * 2].value = text_diag.format(val);
                 }
             }
         }
@@ -223,21 +330,13 @@ impl DiagnosticsText {
 
     fn rebuild(&mut self, font: Res<ScreenDiagnosticsFont>) -> Text {
         let mut sections: Vec<TextSection> = Vec::with_capacity(self.diagnostics.len());
-        if self.colors.is_empty() {
-            warn!(
-                "ScreenDiagnostics.colors is empty, assuming default colors - please provide at least one pair of colors."
-            );
-            self.colors.push(DEFAULT_COLORS);
-        }
-        for name in self.diagnostics.keys().rev() {
-            let colors = self.colors[self.color_index];
-            sections.append(&mut self.section(name, font.0.clone(), colors));
-            self.color_index = (self.color_index + 1) % self.colors.len(); // loop around
+        for (name, text) in self.diagnostics.iter().rev() {
+            sections.append(&mut self.section(name, font.0.clone(), text));
         }
 
         Text {
             sections,
-            ..default()
+            alignment: self.text_alignment,
         }
     }
 
@@ -245,23 +344,28 @@ impl DiagnosticsText {
         &self,
         name: &str,
         font: Handle<Font>,
-        (diag, text): (Color, Color),
+        textdiag: &DiagnosticsText,
     ) -> Vec<TextSection> {
+        let text = if textdiag.show_name {
+            format!(" {} ", name)
+        } else {
+            " ".to_string()
+        };
         vec![
             TextSection {
                 value: "".to_string(),
                 style: TextStyle {
                     font: font.clone(),
                     font_size: 20.0,
-                    color: diag,
+                    color: textdiag.colors.0,
                 },
             },
             TextSection {
-                value: format!(" {} ", name),
+                value: text,
                 style: TextStyle {
                     font,
                     font_size: 20.0,
-                    color: text,
+                    color: textdiag.colors.1,
                 },
             },
         ]
@@ -282,7 +386,7 @@ fn spawn_ui(mut commands: Commands, diag_style: Res<DiagnosticsStyle>) {
 }
 
 fn update_onscreen_diags_layout(
-    mut diags: ResMut<DiagnosticsText>,
+    mut diags: ResMut<ScreenDiagnostics>,
     font: Res<ScreenDiagnosticsFont>,
     mut query: Query<&mut Text, With<DiagnosticsTextMarker>>,
 ) {
@@ -294,7 +398,7 @@ fn update_onscreen_diags_layout(
 }
 
 fn update_diags(
-    diag: ResMut<DiagnosticsText>,
+    mut diag: ResMut<ScreenDiagnostics>,
     diagnostics: Res<Diagnostics>,
     mut query: Query<&mut Text, With<DiagnosticsTextMarker>>,
 ) {
