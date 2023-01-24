@@ -230,7 +230,7 @@ impl<'a> DiagnosticsTextBuilder<'a> {
         self
     }
 
-    /// Toggle whhether the diagnostic name is displayed.
+    /// Toggle whether the diagnostic name is displayed.
     pub fn toggle_name(self) -> Self {
         self.m.entry(self.k.clone()).and_modify(|e| {
             e.show_name = !e.show_name;
@@ -239,7 +239,7 @@ impl<'a> DiagnosticsTextBuilder<'a> {
         self
     }
 
-    /// Toggle whhether the diagnostic is displayed.
+    /// Toggle whether the diagnostic is displayed at all.
     pub fn toggle(self) -> Self {
         self.m.entry(self.k.clone()).and_modify(|e| {
             e.show = !e.show;
@@ -292,7 +292,7 @@ impl ScreenDiagnostics {
 
     /// Modify a [DiagnosticsText] by name.
     ///
-    /// Uses the same syntax as [add_text]
+    /// Uses the same syntax as [ScreenDiagnostics::add]
     pub fn modify<S>(&mut self, name: S) -> DiagnosticsTextBuilder
     where
         S: Into<String>,

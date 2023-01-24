@@ -6,6 +6,15 @@ Display bevy diagnostics on the window without any hassle.
     <img src="https://i.laundmo.com/tENe0/fuxOJOrA74.png/raw">
 </p>
 
+What this can do:
+
+- easy frame and entity dignostics
+- add custom diagnostics
+- change display of diagnostics on the fly
+- toggle diagnostics easily
+
+see the [examples](./examples/) on how to do this.
+
 ## Quickstart
 
 This adds the framerate and frametime diagnostics to your window.
@@ -30,3 +39,9 @@ fn setup_camera(mut commands: Commands) {
 ```
 
 The ScreenFrameDiagnosticsPlugin is a [very simple plugin](./src/extras.rs)
+
+## compatible bevy versions
+
+| bevy | bevy_screen_diagnostics |
+| ---- | ----------------------- |
+| 0.9  | 0.1                     |
