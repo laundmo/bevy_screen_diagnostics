@@ -1,3 +1,5 @@
+// Example of configuring
+
 use bevy::prelude::*;
 
 use bevy_screen_diagnostics::{
@@ -15,8 +17,9 @@ fn main() {
         .run();
 }
 
+// need a camera to display the UI
 fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn rainbow(mut diags: ResMut<ScreenDiagnostics>, mut hue: Local<f32>) {
@@ -30,19 +33,19 @@ fn mouse(
     mut aggregate_toggle: Local<bool>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        diags.modify("fps").toggle_name();
+        diags.modify("fps").toggle();
     }
     if buttons.just_pressed(MouseButton::Right) {
         if *aggregate_toggle {
             diags
                 .modify("fps")
                 .aggregate(Aggregate::Value)
-                .format(|v| format!("{:.0}", v));
+                .format(|v| format!("{v:.0}"));
         } else {
             diags
                 .modify("fps")
                 .aggregate(Aggregate::Average)
-                .format(|v| format!("{:.3}", v));
+                .format(|v| format!("{v:.3}"));
         }
         *aggregate_toggle = !*aggregate_toggle;
     }

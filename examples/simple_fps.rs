@@ -1,4 +1,4 @@
-//
+/// Show frametimes and framerate
 use bevy::prelude::*;
 
 use bevy_screen_diagnostics::{ScreenDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
@@ -12,6 +12,7 @@ fn main() {
         .run();
 }
 
+// need a camera to display the UI
 fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 }

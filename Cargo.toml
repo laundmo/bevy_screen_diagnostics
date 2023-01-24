@@ -1,6 +1,6 @@
 [package]
 name = "bevy_screen_diagnostics"
-description = "Bevy plugin for displaying diagnostics on scren."
+description = "Bevy plugin for displaying diagnostics on screen."
 documentation = "https://docs.rs/bevy_screen_diagnostics"
 version = "0.1.0"
 license = "MIT OR Apache-2.0"
@@ -11,10 +11,15 @@ readme = "README.md"
 authors = ["laundmo"]
 
 [dependencies]
-bevy = { version = "0.8.0", default-features = true }
+bevy = { version = "0.9", default-features = false, features = [
+    "bevy_text",
+    "bevy_ui",
+    "bevy_asset",
+    "bevy_render",
+] }
 
 [dev-dependencies]
-bevy = { version = "0.8.0", default-features = true }
+bevy = { version = "0.9", default-features = true }
 
 [profile.dev]
 opt-level = 1

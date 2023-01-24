@@ -21,7 +21,7 @@ fn setup_frame_diagnostics(mut diags: ResMut<ScreenDiagnostics>) {
     diags
         .add("fps".to_string(), FrameTimeDiagnosticsPlugin::FPS)
         .aggregate(Aggregate::Value)
-        .format(|v| format!("{:.0}", v));
+        .format(|v| format!("{v:.0}"));
 
     diags
         .add(
@@ -29,7 +29,7 @@ fn setup_frame_diagnostics(mut diags: ResMut<ScreenDiagnostics>) {
             FrameTimeDiagnosticsPlugin::FRAME_TIME,
         )
         .aggregate(Aggregate::MovingAverage(5))
-        .format(|v| format!("{:.2}", v * 1000.));
+        .format(|v| format!("{v:.2}"));
 }
 
 /// Plugin which adds the [EntityCountDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
@@ -51,5 +51,5 @@ fn setup_entity_diagnostics(mut diags: ResMut<ScreenDiagnostics>) {
             EntityCountDiagnosticsPlugin::ENTITY_COUNT,
         )
         .aggregate(Aggregate::Value)
-        .format(|v| format!("{:.0}", v));
+        .format(|v| format!("{v:.0}"));
 }

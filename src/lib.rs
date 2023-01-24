@@ -81,7 +81,10 @@ impl Default for ScreenDiagnosticsPlugin {
     }
 }
 
+#[derive(Resource)]
 struct FontOption(Option<&'static str>);
+
+#[derive(Resource)]
 struct DiagnosticsStyle(Style);
 
 impl Plugin for ScreenDiagnosticsPlugin {
@@ -100,8 +103,9 @@ impl Plugin for ScreenDiagnosticsPlugin {
     }
 }
 
-// implementation adjusted from: https://github.com/nicopap/bevy-debug-text-overlay/blob/c929111aeff46fbf3a26ceaf714caebd62d87518/src/overlay.rs#L184-L188
+#[derive(Resource)]
 struct ScreenDiagnosticsFont(Handle<Font>);
+
 impl FromWorld for ScreenDiagnosticsFont {
     fn from_world(world: &mut World) -> Self {
         let font = world.get_resource::<FontOption>().unwrap();
@@ -150,7 +154,7 @@ pub enum Aggregate {
 pub type FormatFn = fn(f64) -> String;
 
 /// Resource which maps the name to the [DiagnosticId], [Aggregate] and [ConvertFn]
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct ScreenDiagnostics {
     text_alignment: TextAlignment,
     diagnostics: BTreeMap<String, DiagnosticsText>,
@@ -158,9 +162,11 @@ pub struct ScreenDiagnostics {
 }
 
 struct DiagnosticsText {
+    name: String,
     id: DiagnosticId,
     agg: Aggregate,
     format: FormatFn,
+    show: bool,
     show_name: bool,
     colors: (Color, Color),
     edit: bool,
@@ -171,6 +177,13 @@ impl DiagnosticsText {
     fn format(&self, v: f64) -> String {
         let formatter = self.format;
         formatter(v)
+    }
+
+    fn get_name(&self) -> String {
+        match self.show_name {
+            true => format!(" {} ", self.name),
+            false => " ".to_string(),
+        }
     }
 }
 
@@ -194,7 +207,6 @@ impl<'a> DiagnosticsTextBuilder<'a> {
     pub fn format(self, format: FormatFn) -> Self {
         self.m.entry(self.k.clone()).and_modify(|e| {
             e.format = format;
-            dbg!(format);
             e.rebuild = true;
         });
         self
@@ -226,6 +238,15 @@ impl<'a> DiagnosticsTextBuilder<'a> {
         });
         self
     }
+
+    /// Toggle whhether the diagnostic is displayed.
+    pub fn toggle(self) -> Self {
+        self.m.entry(self.k.clone()).and_modify(|e| {
+            e.show = !e.show;
+            e.rebuild = true;
+        });
+        self
+    }
 }
 
 impl ScreenDiagnostics {
@@ -247,16 +268,20 @@ impl ScreenDiagnostics {
     where
         S: Into<String>,
     {
+        let name: String = name.into();
+
         let text = DiagnosticsText {
+            name: name.clone(),
             id,
             agg: Aggregate::Value,
-            format: |v| format!("{:.2}", v),
+            format: |v| format!("{v:.2}"),
+            show: true,
             show_name: true,
             colors: DEFAULT_COLORS,
             edit: false,
             rebuild: true,
         };
-        let name: String = name.into();
+
         self.diagnostics.insert(name.clone(), text);
 
         DiagnosticsTextBuilder {
@@ -295,20 +320,30 @@ impl ScreenDiagnostics {
             return;
         }
 
-        for (i, (key, mut text_diag)) in self.diagnostics.iter_mut().rev().enumerate() {
+        for (i, mut text_diag) in self.diagnostics.values_mut().rev().enumerate() {
             if text_diag.rebuild {
                 self.layout_changed = true;
                 text_diag.rebuild = false;
                 continue;
             }
+
+            // needs to be checked here so layout_changed is triggered
+            if !text_diag.show {
+                continue;
+            }
+
             if text_diag.edit {
+                // set the value color
                 text.sections[i * 2].style.color = text_diag.colors.0;
-                text.sections[(i * 2) + 1].style.color = text_diag.colors.1;
-                if text_diag.show_name {
-                    text.sections[(i * 2) + 1].value = format!(" {} ", key);
-                } else {
-                    text.sections[(i * 2) + 1].value = " ".to_string();
-                }
+
+                let name_t = &mut text.sections[(i * 2) + 1];
+
+                // set the name color
+                name_t.style.color = text_diag.colors.1;
+
+                // toggle the name visibility
+                name_t.value = text_diag.get_name();
+
                 text_diag.edit = false;
             }
 
@@ -321,6 +356,7 @@ impl ScreenDiagnostics {
                         skip_maybe.map(|skip| diag.values().skip(skip).sum::<f64>() / count as f64)
                     }
                 };
+
                 if let Some(val) = diag_val {
                     text.sections[i * 2].value = text_diag.format(val);
                 }
@@ -329,9 +365,10 @@ impl ScreenDiagnostics {
     }
 
     fn rebuild(&mut self, font: Res<ScreenDiagnosticsFont>) -> Text {
-        let mut sections: Vec<TextSection> = Vec::with_capacity(self.diagnostics.len());
-        for (name, text) in self.diagnostics.iter().rev() {
-            sections.append(&mut self.section(name, font.0.clone(), text));
+        let mut sections: Vec<TextSection> = Vec::new();
+
+        for text in self.diagnostics.values().rev().filter(|t| t.show) {
+            sections.append(&mut self.section(font.0.clone(), text));
         }
 
         Text {
@@ -340,17 +377,7 @@ impl ScreenDiagnostics {
         }
     }
 
-    fn section(
-        &self,
-        name: &str,
-        font: Handle<Font>,
-        textdiag: &DiagnosticsText,
-    ) -> Vec<TextSection> {
-        let text = if textdiag.show_name {
-            format!(" {} ", name)
-        } else {
-            " ".to_string()
-        };
+    fn section(&self, font: Handle<Font>, textdiag: &DiagnosticsText) -> Vec<TextSection> {
         vec![
             TextSection {
                 value: "".to_string(),
@@ -361,7 +388,7 @@ impl ScreenDiagnostics {
                 },
             },
             TextSection {
-                value: text,
+                value: textdiag.get_name(),
                 style: TextStyle {
                     font,
                     font_size: 20.0,
@@ -374,7 +401,7 @@ impl ScreenDiagnostics {
 
 fn spawn_ui(mut commands: Commands, diag_style: Res<DiagnosticsStyle>) {
     commands
-        .spawn_bundle(TextBundle {
+        .spawn(TextBundle {
             style: diag_style.0.clone(),
             text: Text {
                 sections: vec![],

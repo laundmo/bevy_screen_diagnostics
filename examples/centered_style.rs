@@ -1,9 +1,10 @@
-use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
+use bevy::prelude::*;
 
-use bevy_screen_diagnostics::{Aggregate, ScreenDiagnostics, ScreenDiagnosticsPlugin};
+use bevy_screen_diagnostics::{ScreenDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
         .add_plugin(ScreenDiagnosticsPlugin {
             style: Style {
@@ -13,19 +14,12 @@ fn main() {
             },
             ..default()
         })
-        .add_plugin(FrameTimeDiagnosticsPlugin)
+        .add_plugin(ScreenFrameDiagnosticsPlugin)
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_frame_diagnostics)
         .run();
 }
 
-fn setup_frame_diagnostics(mut diags: ResMut<ScreenDiagnostics>) {
-    diags
-        .add("fps".to_string(), FrameTimeDiagnosticsPlugin::FPS)
-        .aggregate(Aggregate::Value)
-        .format(|v| format!("{:.0}", v));
-}
-
+// need a camera to display the UI
 fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 }

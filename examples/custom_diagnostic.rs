@@ -1,4 +1,4 @@
-// Add a custom diagnostic to bevy and to your screen diagnostics
+/// Add a custom diagnostic to bevy and to your screen diagnostics
 use bevy::{
     diagnostic::{Diagnostic, DiagnosticId, Diagnostics},
     prelude::*,
@@ -20,11 +20,12 @@ fn main() {
 struct Thing;
 
 fn setup(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    // need a camera to display the UI
+    commands.spawn(Camera2dBundle::default());
     // spawn 10 things
     for i in 0..10 {
         commands
-            .spawn_bundle(SpriteBundle {
+            .spawn(SpriteBundle {
                 sprite: Sprite {
                     color: Color::WHITE,
                     custom_size: Some(Vec2::new(5.0, 5.0)),
@@ -41,6 +42,7 @@ fn setup(mut commands: Commands) {
     }
 }
 
+// For a full explanation on adding custom diagnostics, see: https://github.com/bevyengine/bevy/blob/main/examples/diagnostics/custom_diagnostic.rs
 const UNEVEN_BOX_COUNT: DiagnosticId = DiagnosticId::from_u128(123746129308746521389345767461);
 
 fn setup_diagnostic(mut diagnostics: ResMut<Diagnostics>, mut onscreen: ResMut<ScreenDiagnostics>) {
@@ -48,7 +50,7 @@ fn setup_diagnostic(mut diagnostics: ResMut<Diagnostics>, mut onscreen: ResMut<S
     onscreen
         .add("things".to_string(), UNEVEN_BOX_COUNT)
         .aggregate(Aggregate::Value)
-        .format(|v| format!("{:.0}", v));
+        .format(|v| format!("{v:.0}"));
 }
 
 fn thing_count(mut diagnostics: ResMut<Diagnostics>, parts: Query<&Thing>) {
