@@ -8,6 +8,7 @@ use bevy_screen_diagnostics::{
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
         .add_plugin(ScreenDiagnosticsPlugin::default())
         .add_plugin(ScreenFrameDiagnosticsPlugin)
@@ -23,7 +24,10 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn rainbow(mut diags: ResMut<ScreenDiagnostics>, mut hue: Local<f32>) {
-    diags.modify("fps").name_color(Color::hsl(*hue, 1., 0.5));
+    diags
+        .modify("fps")
+        .diagnostic_color(Color::hsl(*hue, 1., 0.5))
+        .name_color(Color::hsl(*hue, 0.5, 0.5));
     *hue = (*hue + 1.) % 360.;
 }
 
