@@ -27,6 +27,7 @@ use std::collections::BTreeMap;
 use bevy::{
     diagnostic::{DiagnosticId, Diagnostics},
     prelude::*,
+    text::BreakLineOn,
     time::FixedTimestep,
 };
 
@@ -95,10 +96,8 @@ impl Plugin for ScreenDiagnosticsPlugin {
             .insert_resource(DiagnosticsStyle(self.style.clone()))
             .add_startup_system(spawn_ui)
             .add_system(update_onscreen_diags_layout)
-            .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(FixedTimestep::step(TIMESTEP_10_PER_SECOND))
-                    .with_system(update_diags),
+            .add_system(
+                update_diags.in_schedule(todo!("Need to figure out how fixed timesteps work now")),
             );
     }
 }
@@ -154,11 +153,20 @@ pub enum Aggregate {
 pub type FormatFn = fn(f64) -> String;
 
 /// Resource which maps the name to the [DiagnosticId], [Aggregate] and [ConvertFn]
-#[derive(Default, Resource)]
+#[derive(Resource)]
 pub struct ScreenDiagnostics {
     text_alignment: TextAlignment,
     diagnostics: BTreeMap<String, DiagnosticsText>,
     layout_changed: bool,
+}
+impl Default for ScreenDiagnostics {
+    fn default() -> Self {
+        Self {
+            text_alignment: TextAlignment::Left,
+            diagnostics: Default::default(),
+            layout_changed: Default::default(),
+        }
+    }
 }
 
 struct DiagnosticsText {
@@ -374,6 +382,7 @@ impl ScreenDiagnostics {
         Text {
             sections,
             alignment: self.text_alignment,
+            linebreak_behaviour: BreakLineOn::WordBoundary,
         }
     }
 
