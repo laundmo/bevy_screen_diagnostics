@@ -11,7 +11,7 @@ readme = "README.md"
 authors = ["laundmo"]
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", branch = "main", default-features = false, features = [
+bevy = { version = "0.10", default-features = false, features = [
     "bevy_text",
     "bevy_ui",
     "bevy_asset",
@@ -19,7 +19,7 @@ bevy = { git = "https://github.com/bevyengine/bevy", branch = "main", default-fe
 ] }
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", branch = "main", default-features = true }
+bevy = { version = "0.10", default-features = true }
 
 [profile.dev]
 opt-level = 1
