@@ -22,13 +22,13 @@
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_doc_code_examples)]
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Duration};
 
 use bevy::{
     diagnostic::{DiagnosticId, Diagnostics},
     prelude::*,
     text::BreakLineOn,
-    time::FixedTimestep,
+    time::common_conditions::on_timer,
 };
 
 mod extras;
@@ -97,7 +97,7 @@ impl Plugin for ScreenDiagnosticsPlugin {
             .add_startup_system(spawn_ui)
             .add_system(update_onscreen_diags_layout)
             .add_system(
-                update_diags.in_schedule(todo!("Need to figure out how fixed timesteps work now")),
+                update_diags.run_if(on_timer(Duration::from_secs_f64(TIMESTEP_10_PER_SECOND))),
             );
     }
 }
