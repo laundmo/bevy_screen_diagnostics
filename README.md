@@ -40,6 +40,10 @@ fn setup_camera(mut commands: Commands) {
 
 The ScreenFrameDiagnosticsPlugin is a [very simple plugin](./src/extras.rs)
 
+## Font
+
+you can use a custom font by disabling the `builtin-font` default feature and providing your own to the `ScreenDiagnosticsPlugin` struct. The builtin font and license can be found in the ./assets/ folder.
+
 ## compatible bevy versions
 
 | bevy | bevy_screen_diagnostics |

@@ -115,7 +115,7 @@ impl FromWorld for ScreenDiagnosticsFont {
             None => panic!(
                 "No default font supplied, please either set the `builtin-font` \
                  flag or provide your own font file by setting the `font` field of \
-                 `OverlayPlugin` to `Some(thing)`"
+                 `ScreenDiagnosticsPlugin` to `Some(\"font_asset_path\")`"
             ),
             #[cfg(feature = "builtin-font")]
             None => world.get_resource_mut::<Assets<Font>>().unwrap().add(

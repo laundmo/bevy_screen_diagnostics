@@ -2,7 +2,7 @@
 name = "bevy_screen_diagnostics"
 description = "Bevy plugin for displaying diagnostics on screen."
 documentation = "https://docs.rs/bevy_screen_diagnostics"
-version = "0.2.1"
+version = "0.2.2"
 license = "MIT OR Apache-2.0"
 edition = "2021"
 keywords = ["gamedev", "bevy", "diagnostics", "debug"]
