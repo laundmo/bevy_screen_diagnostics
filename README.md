@@ -44,4 +44,5 @@ The ScreenFrameDiagnosticsPlugin is a [very simple plugin](./src/extras.rs)
 
 | bevy | bevy_screen_diagnostics |
 | ---- | ----------------------- |
+| 0.10 | 0.2                     |
 | 0.9  | 0.1                     |
