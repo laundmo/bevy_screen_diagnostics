@@ -10,6 +10,10 @@ repository = "https://github.com/laundmo/bevy_screen_diagnostics"
 readme = "README.md"
 authors = ["laundmo"]
 
+[features]
+default = ["builtin-font"]
+builtin-font = []
+
 [dependencies]
 bevy = { version = "0.10", default-features = false, features = [
     "bevy_text",

@@ -111,13 +111,13 @@ impl FromWorld for ScreenDiagnosticsFont {
         let assets = world.get_resource::<AssetServer>().unwrap();
         let font = match font.0 {
             Some(font) => assets.load(font),
-            #[cfg(feature = "no-builtin-font")]
+            #[cfg(not(feature = "builtin-font"))]
             None => panic!(
                 "No default font supplied, please either set the `builtin-font` \
                  flag or provide your own font file by setting the `font` field of \
                  `OverlayPlugin` to `Some(thing)`"
             ),
-            #[cfg(not(feature = "builtin-font"))]
+            #[cfg(feature = "builtin-font")]
             None => world.get_resource_mut::<Assets<Font>>().unwrap().add(
                 Font::try_from_bytes(include_bytes!("../assets/FiraCodeBold.ttf").to_vec())
                     .expect("The hardcoded builtin font is valid, this should never fail."),
