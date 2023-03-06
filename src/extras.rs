@@ -12,8 +12,10 @@ pub struct ScreenFrameDiagnosticsPlugin;
 
 impl Plugin for ScreenFrameDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(FrameTimeDiagnosticsPlugin)
-            .add_startup_system(setup_frame_diagnostics);
+        if !app.is_plugin_added::<FrameTimeDiagnosticsPlugin>() {
+            app.add_plugin(FrameTimeDiagnosticsPlugin);
+        }
+        app.add_startup_system(setup_frame_diagnostics);
     }
 }
 
@@ -39,8 +41,10 @@ pub struct ScreenEntityDiagnosticsPlugin;
 
 impl Plugin for ScreenEntityDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(EntityCountDiagnosticsPlugin)
-            .add_startup_system(setup_entity_diagnostics);
+        if !app.is_plugin_added::<EntityCountDiagnosticsPlugin>() {
+            app.add_plugin(EntityCountDiagnosticsPlugin);
+        }
+        app.add_startup_system(setup_entity_diagnostics);
     }
 }
 
