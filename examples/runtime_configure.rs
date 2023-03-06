@@ -37,7 +37,7 @@ fn mouse(
     mut aggregate_toggle: Local<bool>,
 ) {
     if buttons.just_pressed(MouseButton::Left) {
-        diags.modify("fps").toggle();
+        diags.modify("ms/frame").toggle();
     }
     if buttons.just_pressed(MouseButton::Right) {
         if *aggregate_toggle {

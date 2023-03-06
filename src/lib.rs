@@ -179,6 +179,7 @@ struct DiagnosticsText {
     colors: (Color, Color),
     edit: bool,
     rebuild: bool,
+    index: Option<usize>,
 }
 
 impl DiagnosticsText {
@@ -288,6 +289,7 @@ impl ScreenDiagnostics {
             colors: DEFAULT_COLORS,
             edit: false,
             rebuild: true,
+            index: None,
         };
 
         self.diagnostics.insert(name.clone(), text);
@@ -328,7 +330,7 @@ impl ScreenDiagnostics {
             return;
         }
 
-        for (i, mut text_diag) in self.diagnostics.values_mut().rev().enumerate() {
+        for mut text_diag in self.diagnostics.values_mut().rev() {
             if text_diag.rebuild {
                 self.layout_changed = true;
                 text_diag.rebuild = false;
@@ -340,11 +342,11 @@ impl ScreenDiagnostics {
                 continue;
             }
 
-            if text_diag.edit {
+            if text_diag.edit && text_diag.index.is_some() {
                 // set the value color
-                text.sections[i * 2].style.color = text_diag.colors.0;
+                text.sections[text_diag.index.unwrap()].style.color = text_diag.colors.0;
 
-                let name_t = &mut text.sections[(i * 2) + 1];
+                let name_t = &mut text.sections[text_diag.index.unwrap() + 1];
 
                 // set the name color
                 name_t.style.color = text_diag.colors.1;
@@ -366,7 +368,7 @@ impl ScreenDiagnostics {
                 };
 
                 if let Some(val) = diag_val {
-                    text.sections[i * 2].value = text_diag.format(val);
+                    text.sections[text_diag.index.unwrap()].value = text_diag.format(val);
                 }
             }
         }
@@ -375,8 +377,15 @@ impl ScreenDiagnostics {
     fn rebuild(&mut self, font: Res<ScreenDiagnosticsFont>) -> Text {
         let mut sections: Vec<TextSection> = Vec::new();
 
-        for text in self.diagnostics.values().rev().filter(|t| t.show) {
-            sections.append(&mut self.section(font.0.clone(), text));
+        for (i, mut text) in self
+            .diagnostics
+            .values_mut()
+            .rev()
+            .filter(|t| t.show)
+            .enumerate()
+        {
+            text.index = Some(i * 2);
+            sections.append(&mut Self::section(font.0.clone(), text));
         }
 
         Text {
@@ -386,7 +395,7 @@ impl ScreenDiagnostics {
         }
     }
 
-    fn section(&self, font: Handle<Font>, textdiag: &DiagnosticsText) -> Vec<TextSection> {
+    fn section(font: Handle<Font>, textdiag: &DiagnosticsText) -> Vec<TextSection> {
         vec![
             TextSection {
                 value: "".to_string(),
