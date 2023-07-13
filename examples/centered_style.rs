@@ -6,7 +6,7 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
-        .add_plugin(ScreenDiagnosticsPlugin {
+        .add_plugins(ScreenDiagnosticsPlugin {
             style: Style {
                 margin: UiRect::all(Val::Auto),
                 align_self: AlignSelf::Center,
@@ -14,8 +14,8 @@ fn main() {
             },
             ..default()
         })
-        .add_plugin(ScreenFrameDiagnosticsPlugin)
-        .add_startup_system(setup_camera)
+        .add_plugins(ScreenFrameDiagnosticsPlugin)
+        .add_systems(Startup, setup_camera)
         .run();
 }
 

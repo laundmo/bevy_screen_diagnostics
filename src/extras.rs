@@ -1,6 +1,6 @@
 use bevy::{
     diagnostic::{EntityCountDiagnosticsPlugin, FrameTimeDiagnosticsPlugin},
-    prelude::{App, Plugin, ResMut},
+    prelude::*,
 };
 
 use crate::{Aggregate, ScreenDiagnostics};
@@ -13,9 +13,9 @@ pub struct ScreenFrameDiagnosticsPlugin;
 impl Plugin for ScreenFrameDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<FrameTimeDiagnosticsPlugin>() {
-            app.add_plugin(FrameTimeDiagnosticsPlugin);
+            app.add_plugins(FrameTimeDiagnosticsPlugin);
         }
-        app.add_startup_system(setup_frame_diagnostics);
+        app.add_systems(Startup, setup_frame_diagnostics);
     }
 }
 
@@ -42,9 +42,9 @@ pub struct ScreenEntityDiagnosticsPlugin;
 impl Plugin for ScreenEntityDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<EntityCountDiagnosticsPlugin>() {
-            app.add_plugin(EntityCountDiagnosticsPlugin);
+            app.add_plugins(EntityCountDiagnosticsPlugin);
         }
-        app.add_startup_system(setup_entity_diagnostics);
+        app.add_systems(Startup, setup_entity_diagnostics);
     }
 }
 

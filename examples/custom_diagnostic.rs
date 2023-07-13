@@ -1,6 +1,6 @@
 /// Add a custom diagnostic to bevy and to your screen diagnostics
 use bevy::{
-    diagnostic::{Diagnostic, DiagnosticId, Diagnostics},
+    diagnostic::{Diagnostic, DiagnosticId, Diagnostics, RegisterDiagnostic},
     prelude::*,
 };
 
@@ -9,10 +9,11 @@ use bevy_screen_diagnostics::{Aggregate, ScreenDiagnostics, ScreenDiagnosticsPlu
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ScreenDiagnosticsPlugin::default())
-        .add_startup_system(setup)
-        .add_startup_system(setup_diagnostic)
-        .add_system(thing_count)
+        .register_diagnostic(Diagnostic::new(UNEVEN_BOX_COUNT, "particle_count", 20))
+        .add_plugins(ScreenDiagnosticsPlugin::default())
+        .add_systems(Startup, setup)
+        .add_systems(Startup, setup_diagnostic)
+        .add_systems(Update, thing_count)
         .run();
 }
 
@@ -45,14 +46,13 @@ fn setup(mut commands: Commands) {
 // For a full explanation on adding custom diagnostics, see: https://github.com/bevyengine/bevy/blob/main/examples/diagnostics/custom_diagnostic.rs
 const UNEVEN_BOX_COUNT: DiagnosticId = DiagnosticId::from_u128(123746129308746521389345767461);
 
-fn setup_diagnostic(mut diagnostics: ResMut<Diagnostics>, mut onscreen: ResMut<ScreenDiagnostics>) {
-    diagnostics.add(Diagnostic::new(UNEVEN_BOX_COUNT, "particle_count", 20));
+fn setup_diagnostic(mut onscreen: ResMut<ScreenDiagnostics>) {
     onscreen
         .add("things".to_string(), UNEVEN_BOX_COUNT)
         .aggregate(Aggregate::Value)
         .format(|v| format!("{v:.0}"));
 }
 
-fn thing_count(mut diagnostics: ResMut<Diagnostics>, parts: Query<&Thing>) {
+fn thing_count(mut diagnostics: Diagnostics, parts: Query<&Thing>) {
     diagnostics.add_measurement(UNEVEN_BOX_COUNT, || parts.iter().len() as f64);
 }
