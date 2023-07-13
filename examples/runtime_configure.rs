@@ -10,11 +10,11 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
-        .add_plugin(ScreenDiagnosticsPlugin::default())
-        .add_plugin(ScreenFrameDiagnosticsPlugin)
-        .add_startup_system(setup_camera)
-        .add_system(rainbow)
-        .add_system(mouse)
+        .add_plugins(ScreenDiagnosticsPlugin::default())
+        .add_plugins(ScreenFrameDiagnosticsPlugin)
+        .add_systems(Startup, setup_camera)
+        .add_systems(Update, rainbow)
+        .add_systems(Update, mouse)
         .run();
 }
 

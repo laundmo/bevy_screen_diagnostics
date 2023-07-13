@@ -25,7 +25,7 @@
 use std::{collections::BTreeMap, time::Duration};
 
 use bevy::{
-    diagnostic::{DiagnosticId, Diagnostics},
+    diagnostic::{DiagnosticId, DiagnosticsStore},
     prelude::*,
     text::BreakLineOn,
     time::common_conditions::on_timer,
@@ -56,11 +56,8 @@ pub struct ScreenDiagnosticsPlugin {
     /// Style {
     ///     align_self: AlignSelf::FlexEnd,
     ///     position_type: PositionType::Absolute,
-    ///     position: UiRect {
-    ///         bottom: Val::Px(5.0),
-    ///         right: Val::Px(15.0),
-    ///         ..default()
-    ///     },
+    ///     bottom: Val::Px(5.0),
+    ///     right: Val::Px(15.0),
     ///     ..default()
     /// },
     ///#        ..default()
@@ -81,11 +78,8 @@ impl Default for ScreenDiagnosticsPlugin {
             style: Style {
                 align_self: AlignSelf::FlexEnd,
                 position_type: PositionType::Absolute,
-                position: UiRect {
-                    bottom: Val::Px(5.0),
-                    right: Val::Px(15.0),
-                    ..default()
-                },
+                bottom: Val::Px(5.0),
+                right: Val::Px(15.0),
                 ..default()
             },
             font: None,
@@ -105,9 +99,10 @@ impl Plugin for ScreenDiagnosticsPlugin {
             .insert_resource(FontOption(self.font))
             .init_resource::<ScreenDiagnosticsFont>()
             .insert_resource(DiagnosticsStyle(self.style.clone()))
-            .add_startup_system(spawn_ui)
-            .add_system(update_onscreen_diags_layout)
-            .add_system(
+            .add_systems(Startup, spawn_ui)
+            .add_systems(Update, update_onscreen_diags_layout)
+            .add_systems(
+                Update,
                 update_diags.run_if(on_timer(Duration::from_secs_f64(TIMESTEP_10_PER_SECOND))),
             );
     }
@@ -347,7 +342,7 @@ impl ScreenDiagnostics {
         self.layout_changed = true;
     }
 
-    fn update(&mut self, diagnostics: Res<Diagnostics>, mut text: Mut<Text>) {
+    fn update(&mut self, diagnostics: Res<DiagnosticsStore>, mut text: Mut<Text>) {
         if self.layout_changed {
             return;
         }
@@ -413,7 +408,7 @@ impl ScreenDiagnostics {
         Text {
             sections,
             alignment: self.text_alignment,
-            linebreak_behaviour: BreakLineOn::WordBoundary,
+            linebreak_behavior: BreakLineOn::WordBoundary,
         }
     }
 
@@ -466,7 +461,7 @@ fn update_onscreen_diags_layout(
 
 fn update_diags(
     mut diag: ResMut<ScreenDiagnostics>,
-    diagnostics: Res<Diagnostics>,
+    diagnostics: Res<DiagnosticsStore>,
     mut query: Query<&mut Text, With<DiagnosticsTextMarker>>,
 ) {
     let text = query.single_mut();
