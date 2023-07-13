@@ -3,14 +3,14 @@
 //! FPS and Frametime display:
 //! ```rust
 //! # use bevy::prelude::*;
-//! use bevy_screen_diagnostics::{ScreenDiagnostics, ScreenFrameDiagnostics};
+//! use bevy_screen_diagnostics::{ScreenEntityDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
 //!
 //!
 //! fn main() {
 //!    App::new()
-//!        .add_plugin(DefaultPlugins)
-//!        .add_plugin(ScreenDiagnostics)
-//!        .add_plugin(ScreenFrameDiagnostics);
+//!        .add_plugins(DefaultPlugins)
+//!        .add_plugin(ScreenEntityDiagnosticsPlugin)
+//!        .add_plugin(ScreenFrameDiagnosticsPlugin);
 //! }
 //! ```
 //!
@@ -45,6 +45,14 @@ pub struct ScreenDiagnosticsPlugin {
     ///
     /// By default this is in the bottom right corner of the window:
     /// ```rust
+    ///# use bevy::prelude::*;
+    ///# use bevy_screen_diagnostics::ScreenDiagnosticsPlugin;
+    ///
+    ///# fn main() {
+    ///#     App::new()
+    ///#         .add_plugins(DefaultPlugins)
+    ///#         .add_plugin(ScreenDiagnosticsPlugin {
+    ///#             style:
     /// Style {
     ///     align_self: AlignSelf::FlexEnd,
     ///     position_type: PositionType::Absolute,
@@ -54,7 +62,10 @@ pub struct ScreenDiagnosticsPlugin {
     ///         ..default()
     ///     },
     ///     ..default()
-    /// }
+    /// },
+    ///#        ..default()
+    ///#    });
+    ///# }
     /// ```
     pub style: Style,
     /// The font used for the text. By default [FiraCodeBold](https://github.com/tonsky/FiraCode) is used.
@@ -265,13 +276,24 @@ impl ScreenDiagnostics {
     /// * `diagnostic` - The [DiagnosticId] which is displayed.
 
     /// ```rust
-    /// screen_diagnostics
-    ///   .add(
-    ///     "ms/frame".to_string(),
-    ///     FrameTimeDiagnosticsPlugin::FRAME_TIME,
-    ///   )
-    ///   .aggregate(Aggregate::Value)
-    ///   .format(|v| format!("{:.0}", v));
+    ///# use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
+    ///# use bevy_screen_diagnostics::{Aggregate, ScreenDiagnosticsPlugin,ScreenDiagnostics};
+    ///
+    ///# fn main() {
+    ///#     App::new()
+    ///#         .add_plugins(DefaultPlugins)
+    ///#         .add_plugin(ScreenDiagnosticsPlugin::default())
+    ///#         .add_startup_system(setup);
+    ///# }
+    /// fn setup(mut screen_diagnostics: ResMut<ScreenDiagnostics>) {
+    ///     screen_diagnostics
+    ///         .add(
+    ///             "ms/frame".to_string(),
+    ///             FrameTimeDiagnosticsPlugin::FRAME_TIME,
+    ///         )
+    ///         .aggregate(Aggregate::Value)
+    ///         .format(|v| format!("{:.0}", v));
+    /// }
     /// ```
     pub fn add<S>(&mut self, name: S, id: DiagnosticId) -> DiagnosticsTextBuilder
     where
