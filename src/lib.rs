@@ -1,24 +1,4 @@
-//! A small bevy plugin to easily display diagnostics to the screen
-//!
-//! FPS and Frametime display:
-//! ```rust
-//! # use bevy::prelude::*;
-//! use bevy_screen_diagnostics::{ScreenEntityDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
-//!
-//!
-//! fn main() {
-//!    App::new()
-//!        .add_plugins(DefaultPlugins)
-//!        .add_plugins(ScreenEntityDiagnosticsPlugin)
-//!        .add_plugins(ScreenFrameDiagnosticsPlugin);
-//! }
-//! ```
-//!
-//! bevy_screen_diagnostics provides the following bevy plugins:
-//! - [ScreenDiagnostics]  which offers the basic functionality of displaying diagnostics.
-//! - [ScreenFrameDiagnostics] which adds the [FrameTimeDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
-//! - [ScreenEntityDiagnostics] which adds the [EntityCountDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
-
+#![doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md"))]
 #![warn(missing_docs)]
 #![warn(rustdoc::missing_doc_code_examples)]
 

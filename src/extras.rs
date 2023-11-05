@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{Aggregate, ScreenDiagnostics};
 
-/// Plugin which adds the [FrameTimeDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
+/// Plugin which adds the bevy [`FrameTimeDiagnosticsPlugin`] and adds its diagnostics to [DiagnosticsText]
 ///
 /// Example: ``16.6 ms/frame 60 fps``
 pub struct ScreenFrameDiagnosticsPlugin;
@@ -34,7 +34,7 @@ fn setup_frame_diagnostics(mut diags: ResMut<ScreenDiagnostics>) {
         .format(|v| format!("{v:.2}"));
 }
 
-/// Plugin which adds the [EntityCountDiagnosticsPlugin] and adds its diagnostics to [DiagnosticsText]
+/// Plugin which adds the bevy [`EntityCountDiagnosticsPlugin`] and adds its diagnostics to [DiagnosticsText]
 ///
 /// Example: ``15 entities``
 pub struct ScreenEntityDiagnosticsPlugin;

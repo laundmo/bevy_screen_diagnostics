@@ -27,8 +27,8 @@ use bevy_screen_diagnostics::{ScreenDiagnosticsPlugin, ScreenFrameDiagnosticsPlu
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(ScreenDiagnosticsPlugin::default())
-        .add_plugin(ScreenFrameDiagnosticsPlugin)
+        .add_plugins(ScreenDiagnosticsPlugin::default())
+        .add_plugins(ScreenFrameDiagnosticsPlugin)
         .add_startup_system(setup_camera)
         .run();
 }
@@ -40,9 +40,17 @@ fn setup_camera(mut commands: Commands) {
 
 The ScreenFrameDiagnosticsPlugin is a [very simple plugin](./src/extras.rs)
 
+## Plugins
+
+bevy_screen_diagnostics provides the following bevy plugins:
+- [`ScreenDiagnostics`]  which offers the basic functionality of displaying diagnostics.
+- [`ScreenFrameDiagnosticsPlugin`] display the framerate and frametime (also adds the corresponding bevy diagnostic plugin)
+- [`ScreenEntityDiagnosticsPlugin`] display the amount of entities (also adds the corresponding bevy diagnostic plugin)
+
 ## Font
 
-you can use a custom font by disabling the `builtin-font` default feature and providing your own to the `ScreenDiagnosticsPlugin` struct. The builtin font and license can be found in the ./assets/ folder.
+This crate uses beyvs default font (a stripped version of FiraCode) through the `builtin-font` default feature.
+You can provide your own font while initialising the `ScreenDiagnosticsPlugin` by passing it a asset file path. 
 
 ## compatible bevy versions
 
