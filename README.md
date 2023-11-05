@@ -48,6 +48,7 @@ you can use a custom font by disabling the `builtin-font` default feature and pr
 
 | bevy | bevy_screen_diagnostics |
 | ---- | ----------------------- |
+| 0.12 | 0.4                     |
 | 0.11 | 0.3                     |
 | 0.10 | 0.2                     |
 | 0.9  | 0.1                     |

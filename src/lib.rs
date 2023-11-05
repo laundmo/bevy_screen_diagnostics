@@ -9,8 +9,8 @@
 //! fn main() {
 //!    App::new()
 //!        .add_plugins(DefaultPlugins)
-//!        .add_plugin(ScreenEntityDiagnosticsPlugin)
-//!        .add_plugin(ScreenFrameDiagnosticsPlugin);
+//!        .add_plugins(ScreenEntityDiagnosticsPlugin)
+//!        .add_plugins(ScreenFrameDiagnosticsPlugin);
 //! }
 //! ```
 //!
@@ -51,7 +51,7 @@ pub struct ScreenDiagnosticsPlugin {
     ///# fn main() {
     ///#     App::new()
     ///#         .add_plugins(DefaultPlugins)
-    ///#         .add_plugin(ScreenDiagnosticsPlugin {
+    ///#         .add_plugins(ScreenDiagnosticsPlugin {
     ///#             style:
     /// Style {
     ///     align_self: AlignSelf::FlexEnd,
@@ -120,14 +120,11 @@ impl FromWorld for ScreenDiagnosticsFont {
             #[cfg(not(feature = "builtin-font"))]
             None => panic!(
                 "No default font supplied, please either set the `builtin-font` \
-                 flag or provide your own font file by setting the `font` field of \
+                 feature or provide your own font file by setting the `font` field of \
                  `ScreenDiagnosticsPlugin` to `Some(\"font_asset_path\")`"
             ),
             #[cfg(feature = "builtin-font")]
-            None => world.get_resource_mut::<Assets<Font>>().unwrap().add(
-                Font::try_from_bytes(include_bytes!("../assets/FiraCodeBold.ttf").to_vec())
-                    .expect("The hardcoded builtin font is valid, this should never fail."),
-            ),
+            None => Default::default(),
         };
         Self(font)
     }
@@ -277,8 +274,8 @@ impl ScreenDiagnostics {
     ///# fn main() {
     ///#     App::new()
     ///#         .add_plugins(DefaultPlugins)
-    ///#         .add_plugin(ScreenDiagnosticsPlugin::default())
-    ///#         .add_startup_system(setup);
+    ///#         .add_plugins(ScreenDiagnosticsPlugin::default())
+    ///#         .add_systems(Startup, setup);
     ///# }
     /// fn setup(mut screen_diagnostics: ResMut<ScreenDiagnostics>) {
     ///     screen_diagnostics
