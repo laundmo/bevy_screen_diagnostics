@@ -49,7 +49,7 @@ bevy_screen_diagnostics provides the following bevy plugins:
 
 ## Font
 
-This crate uses beyvs default font (a stripped version of FiraCode) through the `builtin-font` default feature.
+This crate uses bevy's default font (a stripped version of FiraCode) through the `builtin-font` default feature.
 You can provide your own font while initialising the `ScreenDiagnosticsPlugin` by passing it a asset file path. 
 
 ## compatible bevy versions
