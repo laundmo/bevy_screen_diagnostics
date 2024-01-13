@@ -5,8 +5,9 @@
 use std::{collections::BTreeMap, time::Duration};
 
 use bevy::{
-    diagnostic::{DiagnosticId, DiagnosticsStore},
+    diagnostic::{DiagnosticId, Diagnostics, DiagnosticsStore},
     prelude::*,
+    render::view::RenderLayers,
     text::BreakLineOn,
     time::common_conditions::on_timer,
 };
@@ -47,6 +48,8 @@ pub struct ScreenDiagnosticsPlugin {
     pub style: Style,
     /// The font used for the text. By default [FiraCodeBold](https://github.com/tonsky/FiraCode) is used.
     pub font: Option<&'static str>,
+    /// The render layer for the UI
+    pub render_layer: RenderLayers,
 }
 
 const DEFAULT_COLORS: (Color, Color) = (Color::RED, Color::WHITE);
@@ -63,6 +66,7 @@ impl Default for ScreenDiagnosticsPlugin {
                 ..default()
             },
             font: None,
+            render_layer: RenderLayers::default(),
         }
     }
 }
@@ -73,12 +77,16 @@ struct FontOption(Option<&'static str>);
 #[derive(Resource)]
 struct DiagnosticsStyle(Style);
 
+#[derive(Resource, Deref)]
+struct DiagnosticsLayer(RenderLayers);
+
 impl Plugin for ScreenDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ScreenDiagnostics>()
             .insert_resource(FontOption(self.font))
             .init_resource::<ScreenDiagnosticsFont>()
             .insert_resource(DiagnosticsStyle(self.style.clone()))
+            .insert_resource(DiagnosticsLayer(self.render_layer))
             .add_systems(Startup, spawn_ui)
             .add_systems(Update, update_onscreen_diags_layout)
             .add_systems(
@@ -411,16 +419,23 @@ impl ScreenDiagnostics {
     }
 }
 
-fn spawn_ui(mut commands: Commands, diag_style: Res<DiagnosticsStyle>) {
+fn spawn_ui(
+    mut commands: Commands,
+    diag_style: Res<DiagnosticsStyle>,
+    diag_layer: Res<DiagnosticsLayer>,
+) {
     commands
-        .spawn(TextBundle {
-            style: diag_style.0.clone(),
-            text: Text {
-                sections: vec![],
+        .spawn((
+            TextBundle {
+                style: diag_style.0.clone(),
+                text: Text {
+                    sections: vec![],
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        })
+            **diag_layer,
+        ))
         .insert(DiagnosticsTextMarker);
 }
 
