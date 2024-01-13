@@ -91,7 +91,7 @@ impl Plugin for ScreenDiagnosticsPlugin {
             .add_systems(Update, update_onscreen_diags_layout)
             .add_systems(
                 Update,
-                update_diags.run_if(on_timer(Duration::from_secs_f64(TIMESTEP_10_PER_SECOND))),
+                update_diags.run_if(on_timer(Duration::from_secs_f64(self.timestep))),
             );
     }
 }
