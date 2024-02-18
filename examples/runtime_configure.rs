@@ -32,7 +32,7 @@ fn rainbow(mut diags: ResMut<ScreenDiagnostics>, mut hue: Local<f32>) {
 }
 
 fn mouse(
-    buttons: Res<Input<MouseButton>>,
+    buttons: Res<ButtonInput<MouseButton>>,
     mut diags: ResMut<ScreenDiagnostics>,
     mut aggregate_toggle: Local<bool>,
 ) {
