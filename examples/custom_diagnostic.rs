@@ -1,6 +1,6 @@
 /// Add a custom diagnostic to bevy and to your screen diagnostics
 use bevy::{
-    diagnostic::{Diagnostic, DiagnosticId, Diagnostics, RegisterDiagnostic},
+    diagnostic::{Diagnostic, DiagnosticPath, Diagnostics, RegisterDiagnostic},
     prelude::*,
 };
 
@@ -9,7 +9,7 @@ use bevy_screen_diagnostics::{Aggregate, ScreenDiagnostics, ScreenDiagnosticsPlu
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .register_diagnostic(Diagnostic::new(BOX_COUNT, "particle_count", 20))
+        .register_diagnostic(Diagnostic::new(BOX_COUNT))
         .add_plugins(ScreenDiagnosticsPlugin::default())
         .add_systems(Startup, setup)
         .add_systems(Startup, setup_diagnostic)
@@ -44,7 +44,7 @@ fn setup(mut commands: Commands) {
 }
 
 // For a full explanation on adding custom diagnostics, see: https://github.com/bevyengine/bevy/blob/main/examples/diagnostics/custom_diagnostic.rs
-const BOX_COUNT: DiagnosticId = DiagnosticId::from_u128(123746129308746521389345767461);
+const BOX_COUNT: DiagnosticPath = DiagnosticPath::const_new("box_count");
 
 fn setup_diagnostic(mut onscreen: ResMut<ScreenDiagnostics>) {
     onscreen
@@ -54,5 +54,5 @@ fn setup_diagnostic(mut onscreen: ResMut<ScreenDiagnostics>) {
 }
 
 fn thing_count(mut diagnostics: Diagnostics, parts: Query<&Thing>) {
-    diagnostics.add_measurement(BOX_COUNT, || parts.iter().len() as f64);
+    diagnostics.add_measurement(&BOX_COUNT, || parts.iter().len() as f64);
 }

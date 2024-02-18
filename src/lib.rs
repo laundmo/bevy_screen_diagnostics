@@ -5,7 +5,7 @@
 use std::{collections::BTreeMap, time::Duration};
 
 use bevy::{
-    diagnostic::{DiagnosticId, Diagnostics, DiagnosticsStore},
+    diagnostic::{DiagnosticPath, DiagnosticsStore},
     prelude::*,
     render::view::RenderLayers,
     text::BreakLineOn,
@@ -143,17 +143,17 @@ pub enum Aggregate {
 /// Example: ``|v| format!("{:.2}", v);`` which limits the decimal places to 1.
 pub type FormatFn = fn(f64) -> String;
 
-/// Resource which maps the name to the [DiagnosticId], [Aggregate] and [ConvertFn]
+/// Resource which maps the name to the [DiagnosticPath], [Aggregate] and [ConvertFn]
 #[derive(Resource)]
 pub struct ScreenDiagnostics {
-    text_alignment: TextAlignment,
+    text_alignment: JustifyText,
     diagnostics: BTreeMap<String, DiagnosticsText>,
     layout_changed: bool,
 }
 impl Default for ScreenDiagnostics {
     fn default() -> Self {
         Self {
-            text_alignment: TextAlignment::Left,
+            text_alignment: JustifyText::Left,
             diagnostics: Default::default(),
             layout_changed: Default::default(),
         }
@@ -162,7 +162,7 @@ impl Default for ScreenDiagnostics {
 
 struct DiagnosticsText {
     name: String,
-    id: DiagnosticId,
+    path: DiagnosticPath,
     agg: Aggregate,
     format: FormatFn,
     show: bool,
@@ -253,7 +253,7 @@ impl ScreenDiagnostics {
     /// Add a diagnostic to be displayed.
     ///
     /// * `name` - The name displayed on-screen. Also used as a key.
-    /// * `diagnostic` - The [DiagnosticId] which is displayed.
+    /// * `path` - The [DiagnosticPath] which is displayed.
 
     /// ```rust
     ///# use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
@@ -275,7 +275,7 @@ impl ScreenDiagnostics {
     ///         .format(|v| format!("{:.0}", v));
     /// }
     /// ```
-    pub fn add<S>(&mut self, name: S, id: DiagnosticId) -> DiagnosticsTextBuilder
+    pub fn add<S>(&mut self, name: S, path: DiagnosticPath) -> DiagnosticsTextBuilder
     where
         S: Into<String>,
     {
@@ -283,7 +283,7 @@ impl ScreenDiagnostics {
 
         let text = DiagnosticsText {
             name: name.clone(),
-            id,
+            path,
             agg: Aggregate::Value,
             format: |v| format!("{v:.2}"),
             show: true,
@@ -321,8 +321,8 @@ impl ScreenDiagnostics {
         self.diagnostics.remove(&name);
     }
 
-    /// Set the [TextAlignment] and trigger a rebuild
-    pub fn set_alignment(&mut self, align: TextAlignment) {
+    /// Set the [JustifyText] and trigger a rebuild
+    pub fn set_alignment(&mut self, align: JustifyText) {
         self.text_alignment = align;
         self.layout_changed = true;
     }
@@ -332,7 +332,7 @@ impl ScreenDiagnostics {
             return;
         }
 
-        for mut text_diag in self.diagnostics.values_mut().rev() {
+        for text_diag in self.diagnostics.values_mut().rev() {
             if text_diag.rebuild {
                 self.layout_changed = true;
                 text_diag.rebuild = false;
@@ -359,7 +359,7 @@ impl ScreenDiagnostics {
                 text_diag.edit = false;
             }
 
-            if let Some(diag) = diagnostics.get(text_diag.id) {
+            if let Some(diag) = diagnostics.get(&text_diag.path) {
                 let diag_val = match text_diag.agg {
                     Aggregate::Value => diag.value(),
                     Aggregate::Average => diag.average(),
@@ -379,7 +379,7 @@ impl ScreenDiagnostics {
     fn rebuild(&mut self, font: Res<ScreenDiagnosticsFont>) -> Text {
         let mut sections: Vec<TextSection> = Vec::new();
 
-        for (i, mut text) in self
+        for (i, text) in self
             .diagnostics
             .values_mut()
             .rev()
@@ -392,7 +392,7 @@ impl ScreenDiagnostics {
 
         Text {
             sections,
-            alignment: self.text_alignment,
+            justify: self.text_alignment,
             linebreak_behavior: BreakLineOn::WordBoundary,
         }
     }
