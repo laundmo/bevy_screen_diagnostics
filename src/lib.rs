@@ -321,7 +321,7 @@ impl ScreenDiagnostics {
         self.diagnostics.remove(&name);
     }
 
-    /// Set the [TextAlignment] and trigger a rebuild
+    /// Set the [JustifyText] and trigger a rebuild
     pub fn set_alignment(&mut self, align: JustifyText) {
         self.text_alignment = align;
         self.layout_changed = true;
