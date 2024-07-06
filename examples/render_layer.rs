@@ -7,7 +7,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(ScreenDiagnosticsPlugin {
-            render_layer: RenderLayers::all(),
+            render_layer: RenderLayers::default(),
             ..default()
         })
         .add_plugins(ScreenFrameDiagnosticsPlugin)

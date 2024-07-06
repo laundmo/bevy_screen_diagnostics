@@ -11,6 +11,7 @@ use bevy::{
     text::BreakLineOn,
     time::common_conditions::on_timer,
 };
+use bevy::color::palettes::css;
 
 mod extras;
 
@@ -52,7 +53,7 @@ pub struct ScreenDiagnosticsPlugin {
     pub render_layer: RenderLayers,
 }
 
-const DEFAULT_COLORS: (Color, Color) = (Color::RED, Color::WHITE);
+const DEFAULT_COLORS: (Srgba, Srgba) = (css::RED, css::WHITE);
 
 impl Default for ScreenDiagnosticsPlugin {
     fn default() -> Self {
@@ -86,7 +87,7 @@ impl Plugin for ScreenDiagnosticsPlugin {
             .insert_resource(FontOption(self.font))
             .init_resource::<ScreenDiagnosticsFont>()
             .insert_resource(DiagnosticsStyle(self.style.clone()))
-            .insert_resource(DiagnosticsLayer(self.render_layer))
+            .insert_resource(DiagnosticsLayer(self.render_layer.clone()))
             .add_systems(Startup, spawn_ui)
             .add_systems(Update, update_onscreen_diags_layout)
             .add_systems(
@@ -288,7 +289,7 @@ impl ScreenDiagnostics {
             format: |v| format!("{v:.2}"),
             show: true,
             show_name: true,
-            colors: DEFAULT_COLORS,
+            colors: (DEFAULT_COLORS.0.into(), DEFAULT_COLORS.1.into()),
             edit: false,
             rebuild: true,
             index: None,
@@ -434,7 +435,7 @@ fn spawn_ui(
                 },
                 ..default()
             },
-            **diag_layer,
+            diag_layer.clone(),
         ))
         .insert(DiagnosticsTextMarker);
 }
