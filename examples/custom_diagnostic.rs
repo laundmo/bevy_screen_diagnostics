@@ -22,23 +22,18 @@ struct Thing;
 
 fn setup(mut commands: Commands) {
     // need a camera to display the UI
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     // spawn 10 things
     for i in 0..10 {
         commands
-            .spawn(SpriteBundle {
-                sprite: Sprite {
+            .spawn((
+                Sprite {
                     color: Color::WHITE,
                     custom_size: Some(Vec2::new(5.0, 5.0)),
                     ..default()
                 },
-                transform: Transform::from_translation(Vec3::new(
-                    i as f32 * 10.0,
-                    0.0,
-                    i as f32 * 10.0,
-                )),
-                ..default()
-            })
+                Transform::from_translation(Vec3::new(i as f32 * 10.0, 0.0, i as f32 * 10.0)),
+            ))
             .insert(Thing);
     }
 }

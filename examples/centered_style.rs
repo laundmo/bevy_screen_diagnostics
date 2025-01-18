@@ -7,7 +7,7 @@ fn main() {
         .insert_resource(ClearColor(Color::BLACK))
         .add_plugins(DefaultPlugins)
         .add_plugins(ScreenDiagnosticsPlugin {
-            style: Style {
+            style: Node {
                 margin: UiRect::all(Val::Auto),
                 align_self: AlignSelf::Center,
                 ..default()
@@ -21,5 +21,5 @@ fn main() {
 
 // need a camera to display the UI
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 }
