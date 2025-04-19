@@ -29,12 +29,12 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(ScreenDiagnosticsPlugin::default())
         .add_plugins(ScreenFrameDiagnosticsPlugin)
-        .add_startup_system(setup_camera)
+        .add_systems(Startup, setup_camera)
         .run();
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 }
 ```
 
