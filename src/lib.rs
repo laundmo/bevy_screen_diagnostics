@@ -35,7 +35,7 @@ pub struct ScreenDiagnosticsPlugin {
     ///#         .add_plugins(DefaultPlugins)
     ///#         .add_plugins(ScreenDiagnosticsPlugin {
     ///#             style:
-    /// Style {
+    /// Node {
     ///     align_self: AlignSelf::FlexEnd,
     ///     position_type: PositionType::Absolute,
     ///     bottom: Val::Px(5.0),
@@ -389,7 +389,7 @@ impl ScreenDiagnostics {
         mut text_layout: Mut<TextLayout>,
         commands: &mut Commands,
     ) {
-        commands.entity(text_entity).clear_children();
+        commands.entity(text_entity).remove::<Children>();
 
         for (i, text) in self
             .diagnostics
@@ -437,7 +437,7 @@ fn update_onscreen_diags_layout(
     mut commands: Commands,
 ) {
     if diags.layout_changed {
-        let (text_entity, text_layout) = query.single_mut();
+        let (text_entity, text_layout) = query.single_mut().unwrap();
         diags.rebuild(font, text_entity, text_layout, &mut commands);
         diags.layout_changed = false;
     }
@@ -449,6 +449,6 @@ fn update_diags(
     mut query: Query<Entity, With<DiagnosticsTextMarker>>,
     writer: TextUiWriter,
 ) {
-    let root_text = query.single_mut();
+    let root_text = query.single_mut().unwrap();
     diag.update(diagnostics, root_text, writer);
 }
