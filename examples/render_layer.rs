@@ -18,6 +18,6 @@ fn main() {
 // need a camera to display the UI
 fn setup_camera(mut commands: Commands) {
     // spawn camera on different layer
-    commands.spawn((Camera2d::default(), RenderLayers::from_layers(&[1])));
+    commands.spawn((Camera2d, RenderLayers::from_layers(&[1])));
     // could be useful for rendre-to-texture or editor-like applications
 }

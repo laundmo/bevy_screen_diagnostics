@@ -11,8 +11,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .register_diagnostic(Diagnostic::new(BOX_COUNT))
         .add_plugins(ScreenDiagnosticsPlugin::default())
-        .add_systems(Startup, setup)
-        .add_systems(Startup, setup_diagnostic)
+        .add_systems(Startup, (setup, setup_diagnostic))
         .add_systems(Update, thing_count)
         .run();
 }
@@ -22,7 +21,7 @@ struct Thing;
 
 fn setup(mut commands: Commands) {
     // need a camera to display the UI
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
     // spawn 10 things
     for i in 0..10 {
         commands

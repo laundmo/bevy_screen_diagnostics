@@ -13,14 +13,13 @@ fn main() {
         .add_plugins(ScreenDiagnosticsPlugin::default())
         .add_plugins(ScreenFrameDiagnosticsPlugin)
         .add_systems(Startup, setup_camera)
-        .add_systems(Update, rainbow)
-        .add_systems(Update, mouse)
+        .add_systems(Update, (rainbow, mouse))
         .run();
 }
 
 // need a camera to display the UI
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
 }
 
 fn rainbow(mut diags: ResMut<ScreenDiagnostics>, mut hue: Local<f32>) {

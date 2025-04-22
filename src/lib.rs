@@ -197,7 +197,7 @@ pub struct DiagnosticsTextBuilder<'a> {
     k: String,
 }
 
-impl<'a> DiagnosticsTextBuilder<'a> {
+impl DiagnosticsTextBuilder<'_> {
     /// Set the Aggregate function for this [DiagnosticsText]
     pub fn aggregate(self, agg: Aggregate) -> Self {
         self.m.entry(self.k.clone()).and_modify(|e| {
@@ -258,7 +258,7 @@ impl ScreenDiagnostics {
     ///
     /// * `name` - The name displayed on-screen. Also used as a key.
     /// * `path` - The [DiagnosticPath] which is displayed.
-
+    ///
     /// ```rust
     ///# use bevy::{diagnostic::FrameTimeDiagnosticsPlugin, prelude::*};
     ///# use bevy_screen_diagnostics::{Aggregate, ScreenDiagnosticsPlugin,ScreenDiagnostics};
@@ -403,12 +403,12 @@ impl ScreenDiagnostics {
                 parent.spawn((
                     TextSpan::new("test_val"),
                     TextFont::from_font(font.0.clone()).with_font_size(20.0),
-                    TextColor(text.colors.0.into()),
+                    TextColor(text.colors.0),
                 ));
                 parent.spawn((
                     TextSpan::new(text.get_name()),
                     TextFont::from_font(font.0.clone()).with_font_size(20.0),
-                    TextColor(text.colors.1.into()),
+                    TextColor(text.colors.1),
                 ));
             });
         }
