@@ -4,14 +4,14 @@
 
 use std::{collections::BTreeMap, time::Duration};
 
+use bevy::color::palettes::css;
 use bevy::{
     diagnostic::{DiagnosticPath, DiagnosticsStore},
     prelude::*,
     render::view::RenderLayers,
-    text::BreakLineOn,
+    text::LineBreak,
     time::common_conditions::on_timer,
 };
-use bevy::color::palettes::css;
 
 mod extras;
 
@@ -46,7 +46,7 @@ pub struct ScreenDiagnosticsPlugin {
     ///#    });
     ///# }
     /// ```
-    pub style: Style,
+    pub style: Node,
     /// The font used for the text. By default [FiraCodeBold](https://github.com/tonsky/FiraCode) is used.
     pub font: Option<&'static str>,
     /// The render layer for the UI
@@ -59,7 +59,7 @@ impl Default for ScreenDiagnosticsPlugin {
     fn default() -> Self {
         Self {
             timestep: TIMESTEP_10_PER_SECOND,
-            style: Style {
+            style: Node {
                 align_self: AlignSelf::FlexEnd,
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(5.0),
@@ -76,7 +76,7 @@ impl Default for ScreenDiagnosticsPlugin {
 struct FontOption(Option<&'static str>);
 
 #[derive(Resource)]
-struct DiagnosticsStyle(Style);
+struct DiagnosticsStyle(Node);
 
 #[derive(Resource, Deref)]
 struct DiagnosticsLayer(RenderLayers);
@@ -92,7 +92,9 @@ impl Plugin for ScreenDiagnosticsPlugin {
             .add_systems(Update, update_onscreen_diags_layout)
             .add_systems(
                 Update,
-                update_diags.run_if(on_timer(Duration::from_secs_f64(self.timestep))),
+                update_diags
+                    .run_if(on_timer(Duration::from_secs_f64(self.timestep)))
+                    .after(update_onscreen_diags_layout),
             );
     }
 }
@@ -120,6 +122,7 @@ impl FromWorld for ScreenDiagnosticsFont {
 }
 
 #[derive(Component)]
+#[require(Text)]
 struct DiagnosticsTextMarker;
 
 /// Aggregaes which can be used for displaying Diagnostics.
@@ -328,7 +331,12 @@ impl ScreenDiagnostics {
         self.layout_changed = true;
     }
 
-    fn update(&mut self, diagnostics: Res<DiagnosticsStore>, mut text: Mut<Text>) {
+    fn update(
+        &mut self,
+        diagnostics: Res<DiagnosticsStore>,
+        root_text: Entity,
+        mut writer: TextUiWriter,
+    ) {
         if self.layout_changed {
             return;
         }
@@ -347,15 +355,12 @@ impl ScreenDiagnostics {
 
             if text_diag.edit && text_diag.index.is_some() {
                 // set the value color
-                text.sections[text_diag.index.unwrap()].style.color = text_diag.colors.0;
-
-                let name_t = &mut text.sections[text_diag.index.unwrap() + 1];
-
+                *writer.color(root_text, text_diag.index.unwrap()) = text_diag.colors.0.into();
                 // set the name color
-                name_t.style.color = text_diag.colors.1;
+                *writer.color(root_text, text_diag.index.unwrap() + 1) = text_diag.colors.1.into();
 
                 // toggle the name visibility
-                name_t.value = text_diag.get_name();
+                *writer.text(root_text, text_diag.index.unwrap() + 1) = text_diag.get_name();
 
                 text_diag.edit = false;
             }
@@ -371,14 +376,20 @@ impl ScreenDiagnostics {
                 };
 
                 if let Some(val) = diag_val {
-                    text.sections[text_diag.index.unwrap()].value = text_diag.format(val);
+                    *writer.text(root_text, text_diag.index.unwrap()) = text_diag.format(val);
                 }
             }
         }
     }
 
-    fn rebuild(&mut self, font: Res<ScreenDiagnosticsFont>) -> Text {
-        let mut sections: Vec<TextSection> = Vec::new();
+    fn rebuild(
+        &mut self,
+        font: Res<ScreenDiagnosticsFont>,
+        text_entity: Entity,
+        mut text_layout: Mut<TextLayout>,
+        commands: &mut Commands,
+    ) {
+        commands.entity(text_entity).clear_children();
 
         for (i, text) in self
             .diagnostics
@@ -387,36 +398,25 @@ impl ScreenDiagnostics {
             .filter(|t| t.show)
             .enumerate()
         {
-            text.index = Some(i * 2);
-            sections.append(&mut Self::section(font.0.clone(), text));
+            text.index = Some(i * 2 + 1);
+            commands.entity(text_entity).with_children(|parent| {
+                parent.spawn((
+                    TextSpan::new("test_val"),
+                    TextFont::from_font(font.0.clone()).with_font_size(20.0),
+                    TextColor(text.colors.0.into()),
+                ));
+                parent.spawn((
+                    TextSpan::new(text.get_name()),
+                    TextFont::from_font(font.0.clone()).with_font_size(20.0),
+                    TextColor(text.colors.1.into()),
+                ));
+            });
         }
 
-        Text {
-            sections,
+        *text_layout = TextLayout {
             justify: self.text_alignment,
-            linebreak_behavior: BreakLineOn::WordBoundary,
-        }
-    }
-
-    fn section(font: Handle<Font>, textdiag: &DiagnosticsText) -> Vec<TextSection> {
-        vec![
-            TextSection {
-                value: "".to_string(),
-                style: TextStyle {
-                    font: font.clone(),
-                    font_size: 20.0,
-                    color: textdiag.colors.0,
-                },
-            },
-            TextSection {
-                value: textdiag.get_name(),
-                style: TextStyle {
-                    font,
-                    font_size: 20.0,
-                    color: textdiag.colors.1,
-                },
-            },
-        ]
+            linebreak: LineBreak::WordBoundary,
+        };
     }
 }
 
@@ -426,28 +426,19 @@ fn spawn_ui(
     diag_layer: Res<DiagnosticsLayer>,
 ) {
     commands
-        .spawn((
-            TextBundle {
-                style: diag_style.0.clone(),
-                text: Text {
-                    sections: vec![],
-                    ..default()
-                },
-                ..default()
-            },
-            diag_layer.clone(),
-        ))
+        .spawn((Text::default(), diag_style.0.clone(), diag_layer.clone()))
         .insert(DiagnosticsTextMarker);
 }
 
 fn update_onscreen_diags_layout(
     mut diags: ResMut<ScreenDiagnostics>,
     font: Res<ScreenDiagnosticsFont>,
-    mut query: Query<&mut Text, With<DiagnosticsTextMarker>>,
+    mut query: Query<(Entity, &mut TextLayout), With<DiagnosticsTextMarker>>,
+    mut commands: Commands,
 ) {
     if diags.layout_changed {
-        let mut text = query.single_mut();
-        *text = diags.rebuild(font);
+        let (text_entity, text_layout) = query.single_mut();
+        diags.rebuild(font, text_entity, text_layout, &mut commands);
         diags.layout_changed = false;
     }
 }
@@ -455,8 +446,9 @@ fn update_onscreen_diags_layout(
 fn update_diags(
     mut diag: ResMut<ScreenDiagnostics>,
     diagnostics: Res<DiagnosticsStore>,
-    mut query: Query<&mut Text, With<DiagnosticsTextMarker>>,
+    mut query: Query<Entity, With<DiagnosticsTextMarker>>,
+    writer: TextUiWriter,
 ) {
-    let text = query.single_mut();
-    diag.update(diagnostics, text);
+    let root_text = query.single_mut();
+    diag.update(diagnostics, root_text, writer);
 }

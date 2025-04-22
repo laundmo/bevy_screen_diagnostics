@@ -20,7 +20,7 @@ fn main() {
 
 // need a camera to display the UI
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 }
 
 fn rainbow(mut diags: ResMut<ScreenDiagnostics>, mut hue: Local<f32>) {

@@ -56,6 +56,7 @@ You can provide your own font while initialising the `ScreenDiagnosticsPlugin` b
 
 | bevy | bevy_screen_diagnostics |
 | ---- | ----------------------- |
+| 0.15.1 | 0.7                     |
 | 0.14 | 0.6                     |
 | 0.13 | 0.5                     |
 | 0.12 | 0.4                     |
