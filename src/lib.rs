@@ -75,10 +75,10 @@ impl Default for ScreenDiagnosticsPlugin {
 #[derive(Resource)]
 struct FontOption(Option<&'static str>);
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 struct DiagnosticsStyle(Node);
 
-#[derive(Resource, Deref)]
+#[derive(Resource, Deref, Reflect)]
 struct DiagnosticsLayer(RenderLayers);
 
 impl Plugin for ScreenDiagnosticsPlugin {
@@ -99,7 +99,7 @@ impl Plugin for ScreenDiagnosticsPlugin {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
 struct ScreenDiagnosticsFont(Handle<Font>);
 
 impl FromWorld for ScreenDiagnosticsFont {
@@ -121,12 +121,12 @@ impl FromWorld for ScreenDiagnosticsFont {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 #[require(Text)]
 struct DiagnosticsTextMarker;
 
 /// Aggregaes which can be used for displaying Diagnostics.
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default, Debug, Reflect)]
 pub enum Aggregate {
     /// The latest [Diagnostic::value]
     #[default]
@@ -148,12 +148,14 @@ pub enum Aggregate {
 pub type FormatFn = fn(f64) -> String;
 
 /// Resource which maps the name to the [DiagnosticPath], [Aggregate] and [ConvertFn]
-#[derive(Resource)]
+#[derive(Resource, Reflect)]
+#[reflect(from_reflect = false)]
 pub struct ScreenDiagnostics {
     text_alignment: JustifyText,
     diagnostics: BTreeMap<String, DiagnosticsText>,
     layout_changed: bool,
 }
+
 impl Default for ScreenDiagnostics {
     fn default() -> Self {
         Self {
@@ -164,10 +166,27 @@ impl Default for ScreenDiagnostics {
     }
 }
 
+// ngl, i still haven't fully grasped the various parts of bevy_reflect
+// so i don't know if a placeholder like this as a default is useful
+// hell, i dont even know if deriving Reflect on this at all will be useful...
+const PLACEHOLDER_DIAGNOSTIC_PATH: DiagnosticPath =
+    DiagnosticPath::const_new("bevy_screen_diagnostics/placeholder");
+fn placeholder_path() -> DiagnosticPath {
+    PLACEHOLDER_DIAGNOSTIC_PATH
+}
+fn placeholder_format() -> FormatFn {
+    |v| format!("{v:.2}")
+}
+
+#[derive(Reflect)]
 struct DiagnosticsText {
     name: String,
+    // might not be useful to have reflect here at all, but i needed this to make it not complain
+    #[reflect(ignore, default = "placeholder_path")]
     path: DiagnosticPath,
     agg: Aggregate,
+    // might not be useful to have reflect here at all, but i needed this to make it not complain
+    #[reflect(ignore, default = "placeholder_format")]
     format: FormatFn,
     show: bool,
     show_name: bool,
@@ -330,94 +349,6 @@ impl ScreenDiagnostics {
         self.text_alignment = align;
         self.layout_changed = true;
     }
-
-    fn update(
-        &mut self,
-        diagnostics: Res<DiagnosticsStore>,
-        root_text: Entity,
-        mut writer: TextUiWriter,
-    ) {
-        if self.layout_changed {
-            return;
-        }
-
-        for text_diag in self.diagnostics.values_mut().rev() {
-            if text_diag.rebuild {
-                self.layout_changed = true;
-                text_diag.rebuild = false;
-                continue;
-            }
-
-            // needs to be checked here so layout_changed is triggered
-            if !text_diag.show {
-                continue;
-            }
-
-            if text_diag.edit && text_diag.index.is_some() {
-                // set the value color
-                *writer.color(root_text, text_diag.index.unwrap()) = text_diag.colors.0.into();
-                // set the name color
-                *writer.color(root_text, text_diag.index.unwrap() + 1) = text_diag.colors.1.into();
-
-                // toggle the name visibility
-                *writer.text(root_text, text_diag.index.unwrap() + 1) = text_diag.get_name();
-
-                text_diag.edit = false;
-            }
-
-            if let Some(diag) = diagnostics.get(&text_diag.path) {
-                let diag_val = match text_diag.agg {
-                    Aggregate::Value => diag.value(),
-                    Aggregate::Average => diag.average(),
-                    Aggregate::MovingAverage(count) => {
-                        let skip_maybe = diag.history_len().checked_sub(count);
-                        skip_maybe.map(|skip| diag.values().skip(skip).sum::<f64>() / count as f64)
-                    }
-                };
-
-                if let Some(val) = diag_val {
-                    *writer.text(root_text, text_diag.index.unwrap()) = text_diag.format(val);
-                }
-            }
-        }
-    }
-
-    fn rebuild(
-        &mut self,
-        font: Res<ScreenDiagnosticsFont>,
-        text_entity: Entity,
-        mut text_layout: Mut<TextLayout>,
-        commands: &mut Commands,
-    ) {
-        commands.entity(text_entity).remove::<Children>();
-
-        for (i, text) in self
-            .diagnostics
-            .values_mut()
-            .rev()
-            .filter(|t| t.show)
-            .enumerate()
-        {
-            text.index = Some(i * 2 + 1);
-            commands.entity(text_entity).with_children(|parent| {
-                parent.spawn((
-                    TextSpan::new("test_val"),
-                    TextFont::from_font(font.0.clone()).with_font_size(20.0),
-                    TextColor(text.colors.0),
-                ));
-                parent.spawn((
-                    TextSpan::new(text.get_name()),
-                    TextFont::from_font(font.0.clone()).with_font_size(20.0),
-                    TextColor(text.colors.1),
-                ));
-            });
-        }
-
-        *text_layout = TextLayout {
-            justify: self.text_alignment,
-            linebreak: LineBreak::WordBoundary,
-        };
-    }
 }
 
 fn spawn_ui(
@@ -425,20 +356,50 @@ fn spawn_ui(
     diag_style: Res<DiagnosticsStyle>,
     diag_layer: Res<DiagnosticsLayer>,
 ) {
-    commands
-        .spawn((Text::default(), diag_style.0.clone(), diag_layer.clone()))
-        .insert(DiagnosticsTextMarker);
+    commands.spawn((
+        Text::default(),
+        diag_style.0.clone(),
+        diag_layer.clone(),
+        DiagnosticsTextMarker,
+    ));
 }
 
 fn update_onscreen_diags_layout(
     mut diags: ResMut<ScreenDiagnostics>,
     font: Res<ScreenDiagnosticsFont>,
-    mut query: Query<(Entity, &mut TextLayout), With<DiagnosticsTextMarker>>,
+    mut text_layout: Single<(Entity, &mut TextLayout), With<DiagnosticsTextMarker>>,
     mut commands: Commands,
 ) {
     if diags.layout_changed {
-        let (text_entity, text_layout) = query.single_mut().unwrap();
-        diags.rebuild(font, text_entity, text_layout, &mut commands);
+        commands.entity(text_layout.0).remove::<Children>();
+
+        for (i, text) in diags
+            .diagnostics
+            .values_mut()
+            .rev()
+            .filter(|t| t.show)
+            .enumerate()
+        {
+            text.index = Some(i * 2 + 1);
+            commands.entity(text_layout.0).insert(children![
+                (
+                    TextSpan::new("test_val"),
+                    TextFont::from_font(font.0.clone()).with_font_size(20.0),
+                    TextColor(text.colors.0),
+                ),
+                (
+                    TextSpan::new(text.get_name()),
+                    TextFont::from_font(font.0.clone()).with_font_size(20.0),
+                    TextColor(text.colors.1),
+                )
+            ]);
+        }
+
+        *text_layout.1 = TextLayout {
+            justify: diags.text_alignment,
+            linebreak: LineBreak::WordBoundary,
+        };
+
         diags.layout_changed = false;
     }
 }
@@ -446,9 +407,53 @@ fn update_onscreen_diags_layout(
 fn update_diags(
     mut diag: ResMut<ScreenDiagnostics>,
     diagnostics: Res<DiagnosticsStore>,
-    mut query: Query<Entity, With<DiagnosticsTextMarker>>,
-    writer: TextUiWriter,
-) {
-    let root_text = query.single_mut().unwrap();
-    diag.update(diagnostics, root_text, writer);
+    root_text: Single<Entity, With<DiagnosticsTextMarker>>,
+    mut writer: TextUiWriter,
+) -> Result {
+    if diag.layout_changed {
+        return Ok(());
+    }
+    diag.layout_changed = diag
+        .diagnostics
+        .values_mut()
+        .any(|d| std::mem::take(&mut d.rebuild));
+
+    for text_diag in diag.diagnostics.values_mut().rev() {
+        // needs to be checked here so layout_changed is triggered
+        if !text_diag.show {
+            continue;
+        }
+
+        if let Some(index) = text_diag.index
+            && text_diag.edit
+        {
+            // set the value color
+            *writer.color(root_text.entity(), index) = text_diag.colors.0.into();
+            // set the name color
+            *writer.color(root_text.entity(), index + 1) = text_diag.colors.1.into();
+
+            // toggle the name visibility
+            *writer.text(root_text.entity(), index + 1) = text_diag.get_name();
+
+            text_diag.edit = false;
+        }
+
+        if let Some(diag_val) = diagnostics.get(&text_diag.path) {
+            let diag_val = match text_diag.agg {
+                Aggregate::Value => diag_val.value(),
+                Aggregate::Average => diag_val.average(),
+                Aggregate::MovingAverage(count) => {
+                    let skip_maybe = diag_val.history_len().checked_sub(count);
+                    skip_maybe.map(|skip| diag_val.values().skip(skip).sum::<f64>() / count as f64)
+                }
+            };
+
+            if let Some(val) = diag_val
+                && let Some(index) = text_diag.index
+            {
+                *writer.text(root_text.entity(), index) = text_diag.format(val);
+            }
+        }
+    }
+    Ok(())
 }
