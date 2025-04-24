@@ -13,7 +13,7 @@ pub struct ScreenFrameDiagnosticsPlugin;
 impl Plugin for ScreenFrameDiagnosticsPlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<FrameTimeDiagnosticsPlugin>() {
-            app.add_plugins(FrameTimeDiagnosticsPlugin);
+            app.add_plugins(FrameTimeDiagnosticsPlugin::default());
         }
         app.add_systems(Startup, setup_frame_diagnostics);
     }

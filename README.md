@@ -29,12 +29,12 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(ScreenDiagnosticsPlugin::default())
         .add_plugins(ScreenFrameDiagnosticsPlugin)
-        .add_startup_system(setup_camera)
+        .add_systems(Startup, setup_camera)
         .run();
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 }
 ```
 
@@ -55,8 +55,9 @@ You can provide your own font while initialising the `ScreenDiagnosticsPlugin` b
 ## compatible bevy versions
 
 | bevy | bevy_screen_diagnostics |
-| ---- | ----------------------- |
-| 0.15.1 | 0.7                     |
+|------|-------------------------|
+| 0.16 | 0.8                     |
+| 0.15 | 0.7                     |
 | 0.14 | 0.6                     |
 | 0.13 | 0.5                     |
 | 0.12 | 0.4                     |
