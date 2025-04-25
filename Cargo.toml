@@ -13,6 +13,7 @@ authors = ["laundmo"]
 [features]
 default = ["builtin-font"]
 builtin-font = ["bevy/default_font"]
+sysinfo_plugin = ["bevy/sysinfo_plugin"]
 
 [dependencies]
 bevy = { version = "0.16.0", default-features = false, features = [

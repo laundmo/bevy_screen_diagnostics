@@ -15,6 +15,8 @@ use bevy::{
 
 mod extras;
 
+#[cfg(feature = "sysinfo_plugin")]
+pub use self::extras::sysinfo_plugin::ScreenSystemInformationDiagnosticsPlugin;
 pub use self::extras::{ScreenEntityDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
 
 const TIMESTEP_10_PER_SECOND: f64 = 1.0 / 10.0;
@@ -89,12 +91,11 @@ impl Plugin for ScreenDiagnosticsPlugin {
             .insert_resource(DiagnosticsStyle(self.style.clone()))
             .insert_resource(DiagnosticsLayer(self.render_layer.clone()))
             .add_systems(Startup, spawn_ui)
-            .add_systems(Update, update_onscreen_diags_layout)
             .add_systems(
                 Update,
-                update_diags
-                    .run_if(on_timer(Duration::from_secs_f64(self.timestep)))
-                    .after(update_onscreen_diags_layout),
+                (update_onscreen_diags_layout, update_diags)
+                    .chain()
+                    .run_if(on_timer(Duration::from_secs_f64(self.timestep))),
             );
     }
 }
@@ -381,18 +382,18 @@ fn update_onscreen_diags_layout(
             .enumerate()
         {
             text.index = Some(i * 2 + 1);
-            commands.entity(text_layout.0).insert(children![
-                (
+            commands.entity(text_layout.0).with_children(|c| {
+                c.spawn((
                     TextSpan::new("test_val"),
                     TextFont::from_font(font.0.clone()).with_font_size(20.0),
                     TextColor(text.colors.0),
-                ),
-                (
+                ));
+                c.spawn((
                     TextSpan::new(text.get_name()),
                     TextFont::from_font(font.0.clone()).with_font_size(20.0),
                     TextColor(text.colors.1),
-                )
-            ]);
+                ));
+            });
         }
 
         *text_layout.1 = TextLayout {
@@ -413,13 +414,14 @@ fn update_diags(
     if diag.layout_changed {
         return Ok(());
     }
-    diag.layout_changed = diag
-        .diagnostics
-        .values_mut()
-        .any(|d| std::mem::take(&mut d.rebuild));
-
+    let mut layout_changed = false;
     for text_diag in diag.diagnostics.values_mut().rev() {
-        // needs to be checked here so layout_changed is triggered
+        if text_diag.rebuild {
+            layout_changed = true;
+            text_diag.rebuild = false;
+            continue;
+        }
+        // needs to be checked here otherwise this tries to edit bad texts
         if !text_diag.show {
             continue;
         }
@@ -455,5 +457,6 @@ fn update_diags(
             }
         }
     }
+    diag.layout_changed = layout_changed;
     Ok(())
 }

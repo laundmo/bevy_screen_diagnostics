@@ -46,6 +46,7 @@ bevy_screen_diagnostics provides the following bevy plugins:
 - [`ScreenDiagnostics`]  which offers the basic functionality of displaying diagnostics.
 - [`ScreenFrameDiagnosticsPlugin`] display the framerate and frametime (also adds the corresponding bevy diagnostic plugin)
 - [`ScreenEntityDiagnosticsPlugin`] display the amount of entities (also adds the corresponding bevy diagnostic plugin)
+- [`ScreenSystemInformationDiagnosticsPlugin`] feature `sysinfo_plugin` only, display the memory and CPU usage of this process and the entire system (also adds the corresponding bevy diagnostic plugin)
 
 ## Font
 
@@ -55,7 +56,7 @@ You can provide your own font while initialising the `ScreenDiagnosticsPlugin` b
 ## compatible bevy versions
 
 | bevy | bevy_screen_diagnostics |
-|------|-------------------------|
+| ---- | ----------------------- |
 | 0.16 | 0.8                     |
 | 0.15 | 0.7                     |
 | 0.14 | 0.6                     |
