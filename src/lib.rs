@@ -426,18 +426,18 @@ fn update_diags(
             continue;
         }
 
-        if let Some(index) = text_diag.index
-            && text_diag.edit
-        {
-            // set the value color
-            *writer.color(root_text.entity(), index) = text_diag.colors.0.into();
-            // set the name color
-            *writer.color(root_text.entity(), index + 1) = text_diag.colors.1.into();
+        if let Some(index) = text_diag.index {
+            if text_diag.edit {
+                // set the value color
+                *writer.color(root_text.entity(), index) = text_diag.colors.0.into();
+                // set the name color
+                *writer.color(root_text.entity(), index + 1) = text_diag.colors.1.into();
 
-            // toggle the name visibility
-            *writer.text(root_text.entity(), index + 1) = text_diag.get_name();
+                // toggle the name visibility
+                *writer.text(root_text.entity(), index + 1) = text_diag.get_name();
 
-            text_diag.edit = false;
+                text_diag.edit = false;
+            }
         }
 
         if let Some(diag_val) = diagnostics.get(&text_diag.path) {
@@ -450,10 +450,10 @@ fn update_diags(
                 }
             };
 
-            if let Some(val) = diag_val
-                && let Some(index) = text_diag.index
-            {
-                *writer.text(root_text.entity(), index) = text_diag.format(val);
+            if let Some(val) = diag_val {
+                if let Some(index) = text_diag.index {
+                    *writer.text(root_text.entity(), index) = text_diag.format(val);
+                }
             }
         }
     }
